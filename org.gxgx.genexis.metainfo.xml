@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component type="desktop-application">
+  <id>org.gxgx.genexis</id>
+  <launchable type="desktop-id">org.gxgx.genexis.desktop</launchable>
+  <name>Genexis</name>
+  <metadata_license/>
+  <project_license>Unlicensed</project_license>
+  <summary>Xbox 360 JTAG/RGH toolkit</summary>
+  <description>
+    <p>QtQuick Xbox 360 JTAG/RGH toolkit using gxBuild</p>
+  </description>
+  <developer_name>ExposureMG</developer_name>
+  <update_contact>exposuremg@protonmail.com</update_contact>
+  <releases>
+    <release version="0.0.1" date="2026-05-16"/>
+  </releases>
+</component>
