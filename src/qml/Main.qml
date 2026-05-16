@@ -1,69 +1,84 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls as Controls
+import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
-import org.gxgx.genexis
 
 Kirigami.ApplicationWindow {
     id: root
 
-    title: "Genexis"
-
-    minimumWidth: Kirigami.Units.gridUnit * 30
+    minimumWidth: Kirigami.Units.gridUnit * 70
     minimumHeight: Kirigami.Units.gridUnit * 50
     width: minimumWidth
     height: minimumHeight
 
-    pageStack.initialPage: initPage
+    title: "Genexis"
 
-    Component {
-        id: initPage
+    // Combined Row for Centered Tabs and Right-Aligned Settings Action
+    header: Rectangle {
+        implicitHeight: Math.max(settingsAction.implicitHeight, bar.implicitHeight) + Kirigami.Units.smallSpacing * 2
+        color: Kirigami.Theme.backgroundColor
+        
+        // Navigation Tabs centered in the window
+        Controls.TabBar {
+            id: bar
+            anchors.centerIn: parent
+            width: implicitWidth
+            currentIndex: 0
 
-        Kirigami.Page {
-            title: "gxBuild"
-
-            GxBuild {
-                id: gxbuild
+            contentItem: ListView {
+                model: bar.contentModel
+                currentIndex: bar.currentIndex
+                orientation: ListView.Horizontal
+                spacing: Kirigami.Units.largeSpacing
+                boundsBehavior: Flickable.StopAtBounds
+                snapMode: ListView.SnapToItem
             }
 
+            Controls.TabButton {
+                text: qsTr("Home")
+                width: implicitWidth
+            }
+            Controls.TabButton {
+                text: qsTr("gxBuild")
+                width: implicitWidth
+            }
+        }
 
-            ColumnLayout {
-                anchors {
-                    top: parent.top
-                    left: parent.left
-                    right: parent.right
-                }
-                
-                RowLayout {
-                    Controls.Label { text: "Console:" }
-                    Controls.ComboBox {
-                        model: ["Jasper", "Falcon", "Trinity", "Corona"]
-                        onCurrentTextChanged: gxbuild.console_type = currentText
+        // Single Settings action button aligned to the right
+        Kirigami.ActionToolBar {
+            id: settingsAction
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.rightMargin: Kirigami.Units.smallSpacing
+            
+            actions: [
+                Kirigami.Action {
+                    text: qsTr("Settings")
+                    icon.name: "settings-configure"
+                    onTriggered: {
+                        root.showPassiveNotification(qsTr("Settings clicked"))
                     }
                 }
+            ]
+        }
+    }
 
-                RowLayout {
-                    Controls.Label { text: "Build Type:" }
-                    Controls.ComboBox {
-                        model: ["4RGH", "5JTAG", "4JTAG", "3RGH"]
-                        onCurrentTextChanged: gxbuild.build_type = currentText
-                    }
-                }
+    pageStack.initialPage: Kirigami.Page {
+        padding: 0
+        
+        StackLayout {
+            anchors.fill: parent
+            currentIndex: bar.currentIndex
 
-                RowLayout {
-                    Layout.fillWidth: true
-
-                    Controls.Button {
-                        text: "Run Build"
-                        onClicked: gxbuild.run_build()
-                    }
-                }
-
-                Controls.Label {
-                    id: statusLabel
-                    text: "Status: " + gxbuild.status
-                    Layout.fillWidth: true
-                }
+            Loader {
+                id: homeLoader
+                active: true
+                source: "pages/Home.qml"
+            }
+            Loader {
+                id: gxBuildLoader
+                active: true
+                source: "pages/GxBuild.qml"
             }
         }
     }
