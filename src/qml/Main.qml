@@ -7,68 +7,21 @@ Kirigami.ApplicationWindow {
     id: root
 
     minimumWidth: Kirigami.Units.gridUnit * 70
-    minimumHeight: Kirigami.Units.gridUnit * 50
+    minimumHeight: Kirigami.Units.gridUnit * 45
     width: minimumWidth
     height: minimumHeight
 
     title: "Genexis"
 
-    // Combined Row for Centered Tabs and Right-Aligned Settings Action
-    header: Rectangle {
-        implicitHeight: Math.max(settingsAction.implicitHeight, bar.implicitHeight) + Kirigami.Units.smallSpacing * 2
-        color: Kirigami.Theme.backgroundColor
-        
-        // Navigation Tabs centered in the window
-        Controls.TabBar {
-            id: bar
-            anchors.centerIn: parent
-            width: implicitWidth
-            currentIndex: 0
-
-            contentItem: ListView {
-                model: bar.contentModel
-                currentIndex: bar.currentIndex
-                orientation: ListView.Horizontal
-                spacing: Kirigami.Units.largeSpacing
-                boundsBehavior: Flickable.StopAtBounds
-                snapMode: ListView.SnapToItem
-            }
-
-            Controls.TabButton {
-                text: qsTr("Home")
-                width: implicitWidth
-            }
-            Controls.TabButton {
-                text: qsTr("gxBuild")
-                width: implicitWidth
-            }
-        }
-
-        // Single Settings action button aligned to the right
-        Kirigami.ActionToolBar {
-            id: settingsAction
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.rightMargin: Kirigami.Units.smallSpacing
-            
-            actions: [
-                Kirigami.Action {
-                    text: qsTr("Settings")
-                    icon.name: "settings-configure"
-                    onTriggered: {
-                        root.showPassiveNotification(qsTr("Settings clicked"))
-                    }
-                }
-            ]
-        }
-    }
-
     pageStack.initialPage: Kirigami.Page {
         padding: 0
         
-        StackLayout {
+        Controls.SwipeView {
+            id: swipeView
             anchors.fill: parent
-            currentIndex: bar.currentIndex
+            clip: true
+            currentIndex: footerTabBar.currentIndex
+            onCurrentIndexChanged: footerTabBar.currentIndex = currentIndex
 
             Loader {
                 id: homeLoader
@@ -76,10 +29,57 @@ Kirigami.ApplicationWindow {
                 source: "pages/Home.qml"
             }
             Loader {
-                id: gxBuildLoader
+                id: buildLoader
                 active: true
-                source: "pages/GxBuild.qml"
+                source: "pages/Build.qml"
             }
+            Loader {
+                id: nandFlashLoader
+                active: true
+                source: "pages/NandFlash.qml"
+            }
+            Loader {
+                id: timingFlashLoader
+                active: true
+                source: "pages/TimingFlash.qml"
+            }
+            Loader {
+                id: settingsLoader
+                active: true
+                source: "pages/Settings.qml"
+            }
+        }
+
+        footer: Kirigami.NavigationTabBar {
+            id: footerTabBar
+            actions: [
+                Kirigami.Action {
+                    icon.name: "go-home"
+                    text: qsTr("Home")
+                    checked: true
+                    onTriggered: swipeView.currentIndex = 0
+                },
+                Kirigami.Action {
+                    icon.name: "run-build"
+                    text: qsTr("Build")
+                    onTriggered: swipeView.currentIndex = 1
+                },
+                Kirigami.Action {
+                    icon.name: "drive-harddisk"
+                    text: qsTr("Flash")
+                    onTriggered: swipeView.currentIndex = 2
+                },
+                Kirigami.Action {
+                    icon.name: "chronometer"
+                    text: qsTr("Timing")
+                    onTriggered: swipeView.currentIndex = 3
+                },
+                Kirigami.Action {
+                    icon.name: "settings-configure"
+                    text: qsTr("Settings")
+                    onTriggered: swipeView.currentIndex = 4
+                }
+            ]
         }
     }
 }
