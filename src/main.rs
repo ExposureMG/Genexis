@@ -2,7 +2,8 @@ use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QQuickStyle, QString, Q
 use cxx_qt_lib_extras::QApplication;
 use std::env;
 
-mod gxbindings;
+use crate::deps::ftdi2spi::bindings::*;
+use crate::deps::gxbuild::bindings::*;
 
 fn main() {
     let mut app = QApplication::new();
@@ -17,14 +18,7 @@ fn main() {
 
     let mut engine = QQmlApplicationEngine::new();
     if let Some(engine) = engine.as_mut() {
-        if env::var("GENEXIS_HOT_RELOAD").is_ok() {
-            let manifest_dir = env!("CARGO_MANIFEST_DIR");
-            let qml_path = format!("{}/src/qml/Main.qml", manifest_dir);
-            println!("Hot reloading enabled! Loading from: {}", qml_path);
-            engine.load(&QUrl::from(&QString::from(&format!("file://{}", qml_path))));
-        } else {
-            engine.load(&QUrl::from("qrc:/qt/qml/org/gxgx/genexis/src/qml/Main.qml"));
-        }
+        engine.load(&QUrl::from("qrc:/qt/qml/org/gxgx/genexis/src/qml/Main.qml"));
     }
 
     if let Some(app) = app.as_mut() {
