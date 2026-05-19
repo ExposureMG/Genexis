@@ -16,6 +16,6 @@ fn main() {
             .qml_file("src/qml/pages/panels/NandSelector.qml")
             .qml_file("src/qml/pages/panels/TimingSelector.qml"),
     )
-    .files(["src/gxbindings.rs"])
+    .files(["src/deps/gxbuild/bindings.rs"])
     .build();
 }
