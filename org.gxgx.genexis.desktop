@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Genexis
+Exec=genexis
+Icon=org.gxgx.genexis
+Type=Application
+Terminal=false
+Categories=Utility
