@@ -83,15 +83,22 @@ find_package(KF6 REQUIRED COMPONENTS
     IconThemes
 )
 
-# Subdirectories to compile with Genexis
-add_subdirectory(extern/nand/gxbuild3)
-add_subdirectory(extern/flashers/UpdClient)
-
 add_compile_options($<$<COMPILE_LANGUAGE:C>:-Dasm=__asm__>)
 add_compile_options(-Wno-error=zero-as-null-pointer-constant -Wno-zero-as-null-pointer-constant -Wno-error=date-time -Wno-date-time)
 
+# Subdirectories to compile with Genexis
+# Force static builds for gxbuild3/stfs/UpdClient: KDE/ECM sets BUILD_SHARED_LIBS=ON
+# globally. Neither gxbuild3, stfs, nor UpdClient have symbol visibility annotations,
+# so building them as shared libraries leaves all their symbols hidden and unresolvable.
+# spdlog's local-exec TLS model is also incompatible with -shared.
+set(BUILD_SHARED_LIBS OFF)
+add_subdirectory(extern/gxbuild3)
+add_subdirectory(extern/UpdClient)
+set(BUILD_SHARED_LIBS ON)
+
 set(GENEXIS_SOURCES
     src/Main.cpp
+    src/StartupManager.cpp
     src/Updater.cpp
     src/Utils.cpp
     src/api/Flasher.cpp
@@ -114,6 +121,7 @@ set(GENEXIS_SOURCES
     src/pages/BadUpdate.cpp
     src/pages/Network.cpp
     src/pages/Settings.cpp
+    include/StartupManager.hpp
     include/pages/Home.hpp
     include/pages/Explorer.hpp
     include/pages/Editor.hpp
@@ -134,26 +142,58 @@ else()
     )
 endif()
 
-add_executable(genexis ${GENEXIS_SOURCES})
+qt_add_executable(genexis ${GENEXIS_SOURCES})
 
-add_subdirectory(QML)
+qt_policy(SET QTP0004 NEW)
+
+qt_add_qml_module(genexis
+    URI "org.gxgx.genexis"
+    VERSION 1.0
+    RESOURCE_PREFIX "/qt/qml"
+    QML_FILES
+        QML/Main.qml
+        QML/components/NandBuilder.qml
+        QML/components/NandBuilderAdvanced.qml
+        QML/components/NandBuilderSimple.qml
+        QML/components/StatusBar.qml
+        QML/pages/BadUpdate.qml
+        QML/pages/Flasher.qml
+        QML/pages/Home.qml
+        QML/pages/Nand.qml
+        QML/pages/NandBuilder.qml
+        QML/pages/Settings.qml
+        QML/pages/nand/Bootloaders.qml
+        QML/pages/nand/Components.qml
+        QML/pages/nand/Kernel.qml
+        QML/pages/nand/Keyvault.qml
+        QML/pages/nand/Overview.qml
+        QML/pages/nand/Smc.qml
+        QML/pages/nand/Updates.qml
+)
 
 add_dependencies(genexis gxbuild3_lib updclient_lib)
-
 
 target_include_directories(genexis PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/pages
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern/nand/gxbuild3/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern/flashers/UpdClient/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern/gxbuild3/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern/UpdClient/include
     ${ZLIB_INCLUDE_DIRS}
 )
 
 target_link_libraries(genexis PRIVATE
     gxbuild3_lib
     updclient_lib
+    stfs
     ZLIB::ZLIB
+    Qt6::Core
+    Qt6::Quick
+    Qt6::QuickControls2
+    Qt6::Widgets
+    KF6::Kirigami
+    KF6::I18n
+    KF6::CoreAddons
 )
 
 include(GNUInstallDirs)

@@ -39,36 +39,36 @@ size_t PluginRegistry::scanDirectory(const std::filesystem::path& pluginsDir) {
   }
 
   size_t loadedCount = 0;
-  for (const auto& entry : std::filesystem::directory_iterator(pluginsDir, ec)) {
-    if (!entry.is_directory(ec)) continue;
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(pluginsDir, std::filesystem::directory_options::skip_permission_denied, ec)) {
+    if (ec) break;
+    if (!entry.is_regular_file(ec)) continue;
 
-    std::filesystem::path manifestPath = entry.path() / "plugin.json";
-    if (!std::filesystem::exists(manifestPath, ec)) continue;
+    if (entry.path().filename() == "plugin.json") {
+      auto manifestRes = parseManifest(entry.path());
+      if (!manifestRes) {
+        continue;
+      }
 
-    auto manifestRes = parseManifest(manifestPath);
-    if (!manifestRes) {
-      continue;
-    }
+      PluginManifest manifest = *manifestRes;
 
-    PluginManifest manifest = *manifestRes;
+      // Check platform compatibility
+      if (!isPlatformSupported(manifest.platform)) {
+        continue;
+      }
 
-    // Check platform compatibility
-    if (!isPlatformSupported(manifest.platform)) {
-      continue;
-    }
+      std::shared_ptr<IPluginEndpoint> endpoint;
+      if (manifest.endpointType == EndpointType::Executable) {
+        endpoint = std::make_shared<ProcessEndpoint>(manifest);
+      } else if (manifest.endpointType == EndpointType::Library) {
+        endpoint = std::make_shared<DynamicLibraryEndpoint>(manifest);
+      } else {
+        endpoint = std::make_shared<BuiltinEndpoint>(manifest);
+      }
 
-    std::shared_ptr<IPluginEndpoint> endpoint;
-    if (manifest.endpointType == EndpointType::Executable) {
-      endpoint = std::make_shared<ProcessEndpoint>(manifest);
-    } else if (manifest.endpointType == EndpointType::Library) {
-      endpoint = std::make_shared<DynamicLibraryEndpoint>(manifest);
-    } else {
-      endpoint = std::make_shared<BuiltinEndpoint>(manifest);
-    }
-
-    if (endpoint->initialize()) {
-      registerPlugin(manifest, endpoint);
-      loadedCount++;
+      if (endpoint->initialize()) {
+        registerPlugin(manifest, endpoint);
+        loadedCount++;
+      }
     }
   }
 

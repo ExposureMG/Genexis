@@ -1,31 +1,48 @@
+#include "StartupManager.hpp"
+#include "pages/Flasher.hpp"
+#include "pages/Nand.hpp"
+#include "pages/Settings.hpp"
+
 #include <QApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QQuickStyle>
 #include <QUrl>
 
-int main(int argc, char *argv[])
-{
-    QApplication app(argc, argv);
+int main(int argc, char *argv[]) {
+  QApplication app(argc, argv);
 
-    QGuiApplication::setDesktopFileName(QStringLiteral("org.gxgx.genexis"));
+  QCoreApplication::setOrganizationName(QStringLiteral("org.gxgx"));
+  QCoreApplication::setApplicationName(QStringLiteral("genexis"));
+  QGuiApplication::setDesktopFileName(QStringLiteral("org.gxgx.genexis"));
 
-    if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
-        QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
-    }
+  if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
+    QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
+  }
 
-    QQmlApplicationEngine engine;
-    const QUrl url(QStringLiteral("qrc:/qt/qml/org/gxgx/genexis/Main.qml"));
-    QObject::connect(
-        &engine,
-        &QQmlApplicationEngine::objectCreated,
-        &app,
-        [url](QObject *obj, const QUrl &objUrl) {
-            if (!obj && url == objUrl)
-                QCoreApplication::exit(-1);
-        },
-        Qt::QueuedConnection);
+  // Execute Genexis startup tasks (AppData, Settings, Plugins, Updates)
+  StartupManager::instance().runStartupSequence();
 
-    engine.load(url);
+  QQmlApplicationEngine engine;
+  engine.rootContext()->setContextProperty(QStringLiteral("startupManager"),
+                                           &StartupManager::instance());
+  engine.rootContext()->setContextProperty(QStringLiteral("settingsController"),
+                                           &Settings::instance());
+  engine.rootContext()->setContextProperty(QStringLiteral("flasherController"),
+                                           &Flasher::instance());
+  engine.rootContext()->setContextProperty(QStringLiteral("nandController"),
+                                           &Nand::instance());
 
-    return app.exec();
+  const QUrl url(QStringLiteral("qrc:/qt/qml/org/gxgx/genexis/QML/Main.qml"));
+  QObject::connect(
+      &engine, &QQmlApplicationEngine::objectCreated, &app,
+      [url](QObject *obj, const QUrl &objUrl) {
+        if (!obj && url == objUrl)
+          QCoreApplication::exit(-1);
+      },
+      Qt::QueuedConnection);
+
+  engine.load(url);
+
+  return app.exec();
 }

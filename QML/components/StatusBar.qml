@@ -39,6 +39,14 @@ QQC2.ToolBar {
                     Layout.fillWidth: true
                     placeholderText: qsTr("File path…")
                     readOnly: true
+                    onTextChanged: {
+                        if (text !== "" && typeof nandController !== "undefined") {
+                            var autoKey = nandController.detectCpuKey(text)
+                            if (autoKey !== "") {
+                                keyField.text = autoKey
+                            }
+                        }
+                    }
                 }
 
                 QQC2.Button {
@@ -85,7 +93,15 @@ QQC2.ToolBar {
     // Native OS file picker — writes chosen path back into the text field
     FileDialog {
         id: filePicker
-        onAccepted: filePathField.text = selectedFile
+        onAccepted: {
+            filePathField.text = selectedFile
+            if (typeof nandController !== "undefined") {
+                var autoKey = nandController.detectCpuKey(selectedFile)
+                if (autoKey !== "") {
+                    keyField.text = autoKey
+                }
+            }
+        }
     }
 
     contentItem: RowLayout {

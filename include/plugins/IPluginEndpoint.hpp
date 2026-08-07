@@ -18,6 +18,7 @@ struct PluginResult {
   bool success{false};
   int exitCode{0};
   std::string errorMessage;
+  std::string stderrOutput;  // Raw stderr from the process (distinct from errorMessage)
   nlohmann::json responseData;
 };
 

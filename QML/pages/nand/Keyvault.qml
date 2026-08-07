@@ -8,16 +8,8 @@ Kirigami.ScrollablePage {
 
     title: qsTr("Keyvault")
 
-    property string consoleModel: qsTr("Trinity")
-    property string kvType: qsTr("Type 2 (Slim)")
-    property string consoleId: "028045612398"
-    property string serialNumber: "504938210305"
-    property string region: "0x0069 (PAL-EUR)"
-    property string osig: "PLDS    DG-16D4S        0501"
-    property string dvdKey: "A1B2C3D4E5F67890123456789ABCDEF0"
-    property string mfrDate: "2011-05-18"
-    property bool isHashed: true
-    property bool fcrtRequired: true
+    enabled: typeof nandController !== "undefined" && nandController.isNandLoaded && nandController.isCpuKeyLoaded
+    opacity: enabled ? 1.0 : 0.45
 
     QQC2.ToolTip {
         id: copyToolTip
@@ -46,7 +38,7 @@ Kirigami.ScrollablePage {
         width: parent.width
 
         QQC2.Label {
-            text: qsTr("Keyvault Information")
+            text: enabled ? qsTr("Decrypted Keyvault Information") : qsTr("Keyvault Encrypted (Enter CPU Key to Decrypt)")
             font.bold: true
             font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2
             Layout.alignment: Qt.AlignHCenter
@@ -62,39 +54,10 @@ Kirigami.ScrollablePage {
             columnSpacing: Kirigami.Units.largeSpacing
             Layout.alignment: Qt.AlignHCenter
 
-            // Console Model
-            QQC2.Label {
-                text: qsTr("Console Model:")
-                font.bold: true
-                color: Kirigami.Theme.disabledTextColor
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-            }
-            QQC2.TextField {
-                text: root.consoleModel
-                readOnly: true
-                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                implicitWidth: Kirigami.Units.gridUnit * 14
-            }
-
-            // Keyvault Type
-            QQC2.Label {
-                text: qsTr("Keyvault Type:")
-                font.bold: true
-                color: Kirigami.Theme.disabledTextColor
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-            }
-            QQC2.TextField {
-                text: root.kvType
-                readOnly: true
-                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                implicitWidth: Kirigami.Units.gridUnit * 14
-            }
-
             // Serial Number
             QQC2.Label {
                 text: qsTr("Serial Number:")
                 font.bold: true
-                color: Kirigami.Theme.disabledTextColor
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             }
             RowLayout {
@@ -102,7 +65,8 @@ Kirigami.ScrollablePage {
                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
                 QQC2.TextField {
-                    text: root.serialNumber
+                    text: typeof nandController !== "undefined" ? nandController.serialNumber : ""
+                    placeholderText: qsTr("Encrypted")
                     readOnly: true
                     font.family: "Monospace"
                     implicitWidth: Kirigami.Units.gridUnit * 14
@@ -112,7 +76,8 @@ Kirigami.ScrollablePage {
                     id: copySerialBtn
                     icon.name: "edit-copy-symbolic"
                     display: QQC2.AbstractButton.IconOnly
-                    onClicked: root.copyToClipboard(root.serialNumber, qsTr("Serial Number"), copySerialBtn)
+                    enabled: root.enabled
+                    onClicked: root.copyToClipboard(nandController.serialNumber, qsTr("Serial Number"), copySerialBtn)
                     QQC2.ToolTip.text: qsTr("Copy Serial Number")
                     QQC2.ToolTip.visible: hovered
                 }
@@ -122,7 +87,6 @@ Kirigami.ScrollablePage {
             QQC2.Label {
                 text: qsTr("Console ID:")
                 font.bold: true
-                color: Kirigami.Theme.disabledTextColor
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             }
             RowLayout {
@@ -130,7 +94,8 @@ Kirigami.ScrollablePage {
                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
                 QQC2.TextField {
-                    text: root.consoleId
+                    text: typeof nandController !== "undefined" ? nandController.consoleId : ""
+                    placeholderText: qsTr("Encrypted")
                     readOnly: true
                     font.family: "Monospace"
                     implicitWidth: Kirigami.Units.gridUnit * 14
@@ -140,7 +105,8 @@ Kirigami.ScrollablePage {
                     id: copyConsoleIdBtn
                     icon.name: "edit-copy-symbolic"
                     display: QQC2.AbstractButton.IconOnly
-                    onClicked: root.copyToClipboard(root.consoleId, qsTr("Console ID"), copyConsoleIdBtn)
+                    enabled: root.enabled
+                    onClicked: root.copyToClipboard(nandController.consoleId, qsTr("Console ID"), copyConsoleIdBtn)
                     QQC2.ToolTip.text: qsTr("Copy Console ID")
                     QQC2.ToolTip.visible: hovered
                 }
@@ -150,7 +116,6 @@ Kirigami.ScrollablePage {
             QQC2.Label {
                 text: qsTr("DVD Key:")
                 font.bold: true
-                color: Kirigami.Theme.disabledTextColor
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             }
             RowLayout {
@@ -158,7 +123,8 @@ Kirigami.ScrollablePage {
                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
 
                 QQC2.TextField {
-                    text: root.dvdKey
+                    text: typeof nandController !== "undefined" ? nandController.dvdKey : ""
+                    placeholderText: qsTr("Encrypted")
                     readOnly: true
                     font.family: "Monospace"
                     implicitWidth: Kirigami.Units.gridUnit * 20
@@ -168,36 +134,9 @@ Kirigami.ScrollablePage {
                     id: copyDvdKeyBtn
                     icon.name: "edit-copy-symbolic"
                     display: QQC2.AbstractButton.IconOnly
-                    onClicked: root.copyToClipboard(root.dvdKey, qsTr("DVD Key"), copyDvdKeyBtn)
+                    enabled: root.enabled
+                    onClicked: root.copyToClipboard(nandController.dvdKey, qsTr("DVD Key"), copyDvdKeyBtn)
                     QQC2.ToolTip.text: qsTr("Copy DVD Key")
-                    QQC2.ToolTip.visible: hovered
-                }
-            }
-
-            // OSIG String
-            QQC2.Label {
-                text: qsTr("OSIG String:")
-                font.bold: true
-                color: Kirigami.Theme.disabledTextColor
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-            }
-            RowLayout {
-                spacing: Kirigami.Units.smallSpacing
-                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-
-                QQC2.TextField {
-                    text: root.osig
-                    readOnly: true
-                    font.family: "Monospace"
-                    implicitWidth: Kirigami.Units.gridUnit * 20
-                }
-
-                QQC2.Button {
-                    id: copyOsigBtn
-                    icon.name: "edit-copy-symbolic"
-                    display: QQC2.AbstractButton.IconOnly
-                    onClicked: root.copyToClipboard(root.osig, qsTr("OSIG String"), copyOsigBtn)
-                    QQC2.ToolTip.text: qsTr("Copy OSIG")
                     QQC2.ToolTip.visible: hovered
                 }
             }
@@ -206,53 +145,25 @@ Kirigami.ScrollablePage {
             QQC2.Label {
                 text: qsTr("Game Region:")
                 font.bold: true
-                color: Kirigami.Theme.disabledTextColor
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             }
             QQC2.TextField {
-                text: root.region
+                text: typeof nandController !== "undefined" ? nandController.gameRegion : ""
+                placeholderText: qsTr("Encrypted")
                 readOnly: true
                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                 implicitWidth: Kirigami.Units.gridUnit * 14
             }
 
-            // Manufacturing Date
+            // Console Type
             QQC2.Label {
-                text: qsTr("MFR Date:")
+                text: qsTr("Console Type:")
                 font.bold: true
-                color: Kirigami.Theme.disabledTextColor
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             }
             QQC2.TextField {
-                text: root.mfrDate
-                readOnly: true
-                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                implicitWidth: Kirigami.Units.gridUnit * 14
-            }
-
-            // Hashed Status
-            QQC2.Label {
-                text: qsTr("Hashed Status:")
-                font.bold: true
-                color: Kirigami.Theme.disabledTextColor
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-            }
-            QQC2.TextField {
-                text: root.isHashed ? qsTr("Hashed KV") : qsTr("Unhashed KV")
-                readOnly: true
-                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                implicitWidth: Kirigami.Units.gridUnit * 14
-            }
-
-            // FCRT Requirement
-            QQC2.Label {
-                text: qsTr("FCRT Status:")
-                font.bold: true
-                color: Kirigami.Theme.disabledTextColor
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-            }
-            QQC2.TextField {
-                text: root.fcrtRequired ? qsTr("FCRT Required") : qsTr("FCRT Not Required")
+                text: typeof nandController !== "undefined" ? nandController.consoleType : ""
+                placeholderText: qsTr("Encrypted")
                 readOnly: true
                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                 implicitWidth: Kirigami.Units.gridUnit * 14

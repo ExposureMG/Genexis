@@ -24,6 +24,11 @@ Kirigami.ApplicationWindow {
         pageTitle: root.pageStack.currentItem ? root.pageStack.currentItem.title : qsTr("Genexis")
 
         onMenuRequested: root.globalDrawer.drawerOpen = !root.globalDrawer.drawerOpen
+        onFileOpened: (filePath, key) => {
+            if (typeof nandController !== "undefined") {
+                nandController.openFile(filePath, key)
+            }
+        }
     }
 
     // Overlay navigation drawer — hamburger in StatusBar is the only trigger

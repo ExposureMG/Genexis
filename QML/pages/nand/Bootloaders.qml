@@ -8,18 +8,15 @@ Kirigami.ScrollablePage {
 
     title: qsTr("Second Stage")
 
-    property string cbAVersion: "9231"
-    property string cbAPairing: "0x00000000"
-    property string cbALockdown: "0x0000000F"
-    property string cbBVersion: "9231"
-    property string cbXVersion: "1111"
+    enabled: typeof nandController !== "undefined" && nandController.isNandLoaded
+    opacity: enabled ? 1.0 : 0.45
 
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
         width: parent.width
 
         QQC2.Label {
-            text: qsTr("Second Stage Bootloader (2BL)")
+            text: enabled ? qsTr("Bootloader Chain (2BL / 3BL / 4BL / 5BL / Patch Slots)") : qsTr("No NAND File Loaded")
             font.bold: true
             font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2
             Layout.alignment: Qt.AlignHCenter
@@ -29,53 +26,35 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
         }
 
-        // Section 1: CB_A / CB_X Group
-        QQC2.Label {
-            text: qsTr("CB_A / CB_X")
-            font.bold: true
-            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.05
-            Layout.alignment: Qt.AlignHCenter
-        }
-
         GridLayout {
             columns: 2
             rowSpacing: Kirigami.Units.mediumSpacing
             columnSpacing: Kirigami.Units.largeSpacing
             Layout.alignment: Qt.AlignHCenter
 
-            QQC2.Label { text: qsTr("Version:"); font.bold: true; color: Kirigami.Theme.disabledTextColor; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
-            QQC2.TextField { text: root.cbAVersion; readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
+            QQC2.Label { text: qsTr("CB / CB_A Version:"); font.bold: true; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
+            QQC2.TextField { text: typeof nandController !== "undefined" ? nandController.cbAVersion : ""; placeholderText: qsTr("Empty"); readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
 
-            QQC2.Label { text: qsTr("Pairing Data:"); font.bold: true; color: Kirigami.Theme.disabledTextColor; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
-            QQC2.TextField { text: root.cbAPairing; readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
+            QQC2.Label { text: qsTr("CB_B Version:"); font.bold: true; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
+            QQC2.TextField { text: typeof nandController !== "undefined" ? nandController.cbBVersion : ""; placeholderText: qsTr("N/A"); readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
 
-            QQC2.Label { text: qsTr("Lockdown Value:"); font.bold: true; color: Kirigami.Theme.disabledTextColor; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
-            QQC2.TextField { text: root.cbALockdown; readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
+            QQC2.Label { text: qsTr("CB Size / Magic:"); font.bold: true; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
+            QQC2.TextField { text: typeof nandController !== "undefined" && nandController.cbSize !== "" ? nandController.cbSize + " bytes (" + nandController.cbMagic + ")" : ""; placeholderText: qsTr("Empty"); readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
 
-            QQC2.Label { text: qsTr("CB_X Version (RGH3):"); font.bold: true; color: Kirigami.Theme.disabledTextColor; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
-            QQC2.TextField { text: root.cbXVersion; readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
-        }
+            QQC2.Label { text: qsTr("SC / CC (3BL) Version:"); font.bold: true; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
+            QQC2.TextField { text: typeof nandController !== "undefined" ? (nandController.scVersion !== "" ? nandController.scVersion : nandController.ccVersion) : ""; placeholderText: qsTr("Empty"); readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
 
-        Kirigami.Separator {
-            Layout.fillWidth: true
-        }
+            QQC2.Label { text: qsTr("CD (4BL) Version:"); font.bold: true; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
+            QQC2.TextField { text: typeof nandController !== "undefined" ? nandController.cdVersion : ""; placeholderText: qsTr("Empty"); readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
 
-        // Section 2: CB_B Group
-        QQC2.Label {
-            text: qsTr("CB_B")
-            font.bold: true
-            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.05
-            Layout.alignment: Qt.AlignHCenter
-        }
+            QQC2.Label { text: qsTr("CE (5BL) Version:"); font.bold: true; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
+            QQC2.TextField { text: typeof nandController !== "undefined" ? nandController.ceVersion : ""; placeholderText: qsTr("Empty"); readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
 
-        GridLayout {
-            columns: 2
-            rowSpacing: Kirigami.Units.mediumSpacing
-            columnSpacing: Kirigami.Units.largeSpacing
-            Layout.alignment: Qt.AlignHCenter
+            QQC2.Label { text: qsTr("CF0 / CG0 Patch Version:"); font.bold: true; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
+            QQC2.TextField { text: typeof nandController !== "undefined" && nandController.cf0Version !== "" ? nandController.cf0Version + " / " + nandController.cg0Version : ""; placeholderText: qsTr("Empty"); readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
 
-            QQC2.Label { text: qsTr("Version:"); font.bold: true; color: Kirigami.Theme.disabledTextColor; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
-            QQC2.TextField { text: root.cbBVersion; readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
+            QQC2.Label { text: qsTr("CF1 / CG1 Patch Version:"); font.bold: true; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter }
+            QQC2.TextField { text: typeof nandController !== "undefined" && nandController.cf1Version !== "" ? nandController.cf1Version + " / " + nandController.cg1Version : ""; placeholderText: qsTr("Empty"); readOnly: true; font.family: "Monospace"; Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter; implicitWidth: Kirigami.Units.gridUnit * 14 }
         }
 
         Item { Layout.fillHeight: true }

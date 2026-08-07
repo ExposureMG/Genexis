@@ -97,9 +97,57 @@ std::expected<PluginManifest, std::string> parseManifest(const std::filesystem::
     }
   }
 
-  // Provides capability object
-  if (j.contains("provides")) {
-    manifest.provides = j["provides"];
+  // Capabilities array
+  if (j.contains("capabilities") && j["capabilities"].is_array()) {
+    for (const auto& capJ : j["capabilities"]) {
+      if (!capJ.is_object()) continue;
+      Capability cap;
+
+      if (capJ.contains("name") && capJ["name"].is_string()) {
+        cap.name = capJ["name"].get<std::string>();
+      }
+      if (capJ.contains("description") && capJ["description"].is_string()) {
+        cap.description = capJ["description"].get<std::string>();
+      }
+      if (capJ.contains("command") && capJ["command"].is_array()) {
+        for (const auto& tok : capJ["command"]) {
+          if (tok.is_string()) cap.command.push_back(tok.get<std::string>());
+        }
+      }
+      if (capJ.contains("positional") && capJ["positional"].is_array()) {
+        for (const auto& tok : capJ["positional"]) {
+          if (tok.is_string()) cap.positional.push_back(tok.get<std::string>());
+        }
+      }
+      if (capJ.contains("outputParam") && capJ["outputParam"].is_string()) {
+        cap.outputParam = capJ["outputParam"].get<std::string>();
+      }
+      if (capJ.contains("params") && capJ["params"].is_array()) {
+        for (const auto& pJ : capJ["params"]) {
+          if (!pJ.is_object()) continue;
+          CapabilityParam param;
+          if (pJ.contains("name") && pJ["name"].is_string())
+            param.name = pJ["name"].get<std::string>();
+          if (pJ.contains("flagName") && pJ["flagName"].is_string())
+            param.flagName = pJ["flagName"].get<std::string>();
+          if (pJ.contains("type") && pJ["type"].is_string())
+            param.type = pJ["type"].get<std::string>();
+          if (pJ.contains("flagStyle") && pJ["flagStyle"].is_string())
+            param.flagStyle = pJ["flagStyle"].get<std::string>();
+          if (pJ.contains("required") && pJ["required"].is_boolean())
+            param.required = pJ["required"].get<bool>();
+          if (pJ.contains("default") && pJ["default"].is_string())
+            param.defaultValue = pJ["default"].get<std::string>();
+          if (pJ.contains("description") && pJ["description"].is_string())
+            param.description = pJ["description"].get<std::string>();
+          cap.params.push_back(std::move(param));
+        }
+      }
+
+      if (!cap.name.empty()) {
+        manifest.capabilities.push_back(std::move(cap));
+      }
+    }
   }
 
   // Executable info
@@ -157,6 +205,13 @@ std::expected<PluginManifest, std::string> parseManifest(const std::filesystem::
   }
 
   return manifest;
+}
+
+const Capability* PluginManifest::findCapability(std::string_view capName) const noexcept {
+  for (const auto& cap : capabilities) {
+    if (cap.name == capName) return &cap;
+  }
+  return nullptr;
 }
 
 } // namespace gxapi::Plugins

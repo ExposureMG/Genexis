@@ -262,6 +262,10 @@ Kirigami.ScrollablePage {
                 Kirigami.FormData.label: qsTr("Operation:")
                 Layout.fillWidth: true
                 model: [qsTr("Read"), qsTr("Write")]
+                enabled: {
+                    var ext = root.selectedFilePath.split('.').pop().toLowerCase()
+                    return ext !== "svf" && ext !== "xsvf"
+                }
             }
         }
 
@@ -269,14 +273,26 @@ Kirigami.ScrollablePage {
             Layout.fillHeight: true
         }
 
+        Connections {
+            target: typeof flasherController !== "undefined" ? flasherController : null
+            function onLogOutput(message) {
+                root.logText += message + "\n"
+            }
+        }
+
         // Action Button at bottom matching NandBuilder style
         QQC2.Button {
             id: actionButton
-            text: operationCombo.currentText === qsTr("Read")
-                  ? qsTr("Read NAND")
-                  : qsTr("Write NAND")
+            text: {
+                var ext = root.selectedFilePath.split('.').pop().toLowerCase()
+                if (ext === "svf" || ext === "xsvf") {
+                    return qsTr("Flash CPLD")
+                }
+                return operationCombo.currentText === qsTr("Read") ? qsTr("Read NAND") : qsTr("Write NAND")
+            }
             icon.name: "system-run"
             highlighted: true
+            enabled: typeof flasherController === "undefined" || !flasherController.isBusy
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 16
             Layout.alignment: Qt.AlignHCenter
@@ -286,6 +302,10 @@ Kirigami.ScrollablePage {
                 root.logText += "[" + timestamp + "] Initiating " + operationCombo.currentText + " operation...\n"
                 if (root.selectedFilePath !== "") {
                     root.logText += "[" + timestamp + "] Target file: " + root.selectedFilePath + "\n"
+                }
+
+                if (typeof flasherController !== "undefined") {
+                    flasherController.performOperation(root.selectedFilePath, operationCombo.currentText, root.flasherOptions)
                 }
             }
         }
