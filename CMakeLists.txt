@@ -117,6 +117,7 @@ set(GENEXIS_SOURCES
     src/pages/Explorer.cpp
     src/pages/Editor.cpp
     src/pages/Nand.cpp
+    src/pages/NandBuilderController.cpp
     src/pages/Flasher.cpp
     src/pages/BadUpdate.cpp
     src/pages/Network.cpp
@@ -126,6 +127,7 @@ set(GENEXIS_SOURCES
     include/pages/Explorer.hpp
     include/pages/Editor.hpp
     include/pages/Nand.hpp
+    include/pages/NandBuilderController.hpp
     include/pages/Flasher.hpp
     include/pages/BadUpdate.hpp
     include/pages/Network.hpp

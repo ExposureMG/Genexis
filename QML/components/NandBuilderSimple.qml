@@ -9,7 +9,7 @@ Item {
     // Output properties for parent/controller binding
     property alias buildType: buildTypeCombo.currentText
     property alias buildVersion: buildVersionCombo.currentText
-    property alias hack: hackCombo.currentText
+    property alias imageType: imageTypeCombo.currentText
     property alias hackVersion: hackVersionCombo.currentText
     property var activePatches: []
 
@@ -122,34 +122,71 @@ Item {
                 model: [qsTr("NAND Image"), qsTr("XeLL Image")]
             }
 
-            // Dropdown 2: Build Version (Disabled if XeLL is selected)
+            // --- NAND Image Controls ---
             QQC2.ComboBox {
                 id: buildVersionCombo
                 Kirigami.FormData.label: qsTr("Build Version:")
                 Layout.fillWidth: true
-                enabled: buildTypeCombo.currentText !== qsTr("XeLL Image")
-                model: [qsTr("Latest")]
-            }
-
-            // Dropdown 3: Hack
-            QQC2.ComboBox {
-                id: hackCombo
-                Kirigami.FormData.label: qsTr("Hack:")
-                Layout.fillWidth: true
-                model: [qsTr("None"), qsTr("RGH"), qsTr("JTAG")]
+                visible: buildTypeCombo.currentText !== qsTr("XeLL Image")
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.simpleVersions : ["Latest"]
                 onCurrentTextChanged: {
-                    hackVersionCombo.model = root.getHackVersionModel(currentText)
-                    hackVersionCombo.currentIndex = 0
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedSimpleVersion(currentText)
+                    }
                 }
             }
 
-            // Dropdown 4: Hack Version (Dynamic based on Hack)
+            QQC2.ComboBox {
+                id: imageTypeCombo
+                Kirigami.FormData.label: qsTr("Image Type:")
+                Layout.fillWidth: true
+                visible: buildTypeCombo.currentText !== qsTr("XeLL Image")
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.simpleImageTypes : ["Retail", "FreeBoot", "RGLoader"]
+                onCurrentTextChanged: {
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedSimpleImageType(currentText)
+                    }
+                }
+            }
+
             QQC2.ComboBox {
                 id: hackVersionCombo
                 Kirigami.FormData.label: qsTr("Hack Version:")
                 Layout.fillWidth: true
-                enabled: hackCombo.currentText !== qsTr("None")
-                model: root.getHackVersionModel(hackCombo.currentText)
+                visible: buildTypeCombo.currentText !== qsTr("XeLL Image")
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.simpleHacks : ["RGH 3"]
+                onCurrentTextChanged: {
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedSimpleHack(currentText)
+                    }
+                }
+            }
+
+            // --- XeLL Image Controls ---
+            QQC2.ComboBox {
+                id: xellHackCombo
+                Kirigami.FormData.label: qsTr("Hack:")
+                Layout.fillWidth: true
+                visible: buildTypeCombo.currentText === qsTr("XeLL Image")
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.xellHacks : []
+                onCurrentTextChanged: {
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedXellHack(currentText)
+                    }
+                }
+            }
+
+            QQC2.ComboBox {
+                id: xellImageCombo
+                Kirigami.FormData.label: qsTr("Image:")
+                Layout.fillWidth: true
+                visible: buildTypeCombo.currentText === qsTr("XeLL Image")
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.xellImages : []
+                onCurrentTextChanged: {
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedXellImage(currentText)
+                    }
+                }
             }
 
             // Patches Button
@@ -195,8 +232,8 @@ Item {
                 var config = {
                     "buildType": root.buildType,
                     "buildVersion": root.buildType === qsTr("XeLL Image") ? "" : root.buildVersion,
-                    "hack": root.hack,
-                    "hackVersion": root.hack === qsTr("None") ? "" : root.hackVersion,
+                    "imageType": root.buildType === qsTr("XeLL Image") ? "" : root.imageType,
+                    "hackVersion": root.buildType === qsTr("XeLL Image") ? "" : root.hackVersion,
                     "patches": root.activePatches
                 }
                 root.buildRequested(config)

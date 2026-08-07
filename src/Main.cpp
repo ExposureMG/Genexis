@@ -1,6 +1,7 @@
 #include "StartupManager.hpp"
 #include "pages/Flasher.hpp"
 #include "pages/Nand.hpp"
+#include "pages/NandBuilderController.hpp"
 #include "pages/Settings.hpp"
 
 #include <QApplication>
@@ -32,6 +33,8 @@ int main(int argc, char *argv[]) {
                                            &Flasher::instance());
   engine.rootContext()->setContextProperty(QStringLiteral("nandController"),
                                            &Nand::instance());
+  engine.rootContext()->setContextProperty(QStringLiteral("nandBuilderController"),
+                                           &NandBuilderController::instance());
 
   const QUrl url(QStringLiteral("qrc:/qt/qml/org/gxgx/genexis/QML/Main.qml"));
   QObject::connect(

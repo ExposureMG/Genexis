@@ -254,7 +254,12 @@ Item {
                 Kirigami.FormData.label: qsTr("Hack:")
                 Layout.fillWidth: true
                 visible: root.isXeLL
-                model: ["Glitch2", "JTAG"]
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.xellHacks : []
+                onCurrentTextChanged: {
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedXellHack(currentText)
+                    }
+                }
             }
 
             QQC2.ComboBox {
@@ -262,7 +267,12 @@ Item {
                 Kirigami.FormData.label: qsTr("Image:")
                 Layout.fillWidth: true
                 visible: root.isXeLL
-                model: ["XENON_AUD", "JASPER_SMC+", "FALCON_CR4"]
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.xellImages : []
+                onCurrentTextChanged: {
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedXellImage(currentText)
+                    }
+                }
             }
 
             // NAND Image / Donor Mode Controls
@@ -271,7 +281,12 @@ Item {
                 Kirigami.FormData.label: qsTr("Version:")
                 Layout.fillWidth: true
                 visible: !root.isXeLL
-                model: ["Latest", "17559", "9199", "6717"]
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.buildVersions : []
+                onCurrentTextChanged: {
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedVersion(currentText)
+                    }
+                }
             }
 
             QQC2.ComboBox {
@@ -279,7 +294,12 @@ Item {
                 Kirigami.FormData.label: qsTr("Image Type:")
                 Layout.fillWidth: true
                 visible: !root.isXeLL
-                model: ["Retail", "Glitch1", "Glitch2", "Glitch3", "JTAG"]
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.imageTypes : []
+                onCurrentTextChanged: {
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedImageType(currentText)
+                    }
+                }
             }
 
             QQC2.ComboBox {
@@ -287,7 +307,12 @@ Item {
                 Kirigami.FormData.label: qsTr("Console:")
                 Layout.fillWidth: true
                 visible: !root.isXeLL
-                model: ["Xenon", "Falcon", "Corona"]
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.consoles : []
+                onCurrentTextChanged: {
+                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
+                        nandBuilderController.setSelectedConsole(currentText)
+                    }
+                }
             }
 
             // Row with Patches and Options Buttons on the same row
