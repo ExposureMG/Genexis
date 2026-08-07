@@ -1,39 +1,44 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
+import QtQuick.Dialogs
 import org.kde.kirigami as Kirigami
 
 Item {
     id: root
 
     // Output properties for parent/controller binding
-    property alias buildType: buildTypeCombo.currentText
-    
-    // NAND Image / Donor specific properties
+    property alias cpuKey: cpuKeyField.text
+    property alias keyvaultPath: kvPathField.text
+    property alias cfLdv: cfLdvSpinBox.value
     property alias version: versionCombo.currentText
     property alias imageType: imageTypeCombo.currentText
     property alias consoleModel: consoleCombo.currentText
-
-    // XeLL Image specific properties
-    property alias xellHack: xellHackCombo.currentText
-    property alias xellImage: xellImageCombo.currentText
-
-    // Selected patches list
     property var activePatches: []
-
-    // Advanced options property object
-    property var advancedOptions: ({
-        "cpuKey": "",
-        "kvPath": "",
-        "smcPath": "",
-        "customArgs": ""
-    })
+    property var advancedOptions: ({})
 
     // Signal emitted when user clicks "Build Image"
     signal buildRequested(var config)
 
-    // Helper property to check current build type mode
-    readonly property bool isXeLL: buildTypeCombo.currentText === qsTr("XeLL Image")
+    // Helper to generate a random 32-character hex CPU Key
+    function generateCpuKey() {
+        var chars = "0123456789ABCDEF"
+        var key = ""
+        for (var i = 0; i < 32; i++) {
+            key += chars.charAt(Math.floor(Math.random() * chars.length))
+        }
+        cpuKeyField.text = key
+    }
+
+    // ── Keyvault File Dialog ──────────────────────────────────────────────
+    FileDialog {
+        id: kvFileDialog
+        title: qsTr("Select Keyvault File")
+        nameFilters: [qsTr("Keyvault Files (*.bin *.kv)"), qsTr("All Files (*)")]
+        onAccepted: {
+            kvPathField.text = kvFileDialog.selectedFile.toString().replace("file://", "")
+        }
+    }
 
     // ── Patches Dialog ──────────────────────────────────────────────────
     QQC2.Dialog {
@@ -109,92 +114,38 @@ Item {
     // ── Advanced Options Dialog ─────────────────────────────────────────
     QQC2.Dialog {
         id: optionsDialog
-        title: qsTr("Advanced Image Options")
+        title: qsTr("Advanced xeBuild Options")
         modal: true
         parent: QQC2.Overlay.overlay
         anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 24
-        implicitHeight: Kirigami.Units.gridUnit * 18
+        implicitWidth: Kirigami.Units.gridUnit * 22
+        implicitHeight: Kirigami.Units.gridUnit * 20
 
-        property string tempCpuKey: ""
-        property string tempKvPath: ""
-        property string tempSmcPath: ""
-        property string tempCustomArgs: ""
+        property var tempOptions: ({})
 
         onAboutToShow: {
-            tempCpuKey = root.advancedOptions.cpuKey || ""
-            tempKvPath = root.advancedOptions.kvPath || ""
-            tempSmcPath = root.advancedOptions.smcPath || ""
-            tempCustomArgs = root.advancedOptions.customArgs || ""
+            tempOptions = Object.assign({}, root.advancedOptions)
         }
 
         contentItem: QQC2.ScrollView {
             clip: true
-            GridLayout {
-                columns: 2
-                rowSpacing: Kirigami.Units.mediumSpacing
-                columnSpacing: Kirigami.Units.largeSpacing
-                width: optionsDialog.width - optionsDialog.padding * 2
-
-                // CPU Key
-                QQC2.Label {
-                    text: qsTr("CPU Key:")
-                    font.bold: true
-                    color: Kirigami.Theme.disabledTextColor
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-                QQC2.TextField {
-                    id: cpuKeyField
-                    text: optionsDialog.tempCpuKey
-                    placeholderText: qsTr("32-digit Hex CPU Key")
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                    onTextChanged: optionsDialog.tempCpuKey = text
+            Kirigami.FormLayout {
+                QQC2.CheckBox {
+                    Kirigami.FormData.label: qsTr("Disable FCrt:")
+                    checked: optionsDialog.tempOptions["nofcrt"] || false
+                    onCheckedChanged: optionsDialog.tempOptions["nofcrt"] = checked
                 }
 
-                // Keyvault File Path
-                QQC2.Label {
-                    text: qsTr("Keyvault (KV):")
-                    font.bold: true
-                    color: Kirigami.Theme.disabledTextColor
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-                QQC2.TextField {
-                    id: kvPathField
-                    text: optionsDialog.tempKvPath
-                    placeholderText: qsTr("Path to kv.bin…")
-                    Layout.fillWidth: true
-                    onTextChanged: optionsDialog.tempKvPath = text
+                QQC2.CheckBox {
+                    Kirigami.FormData.label: qsTr("Disable HDMI Wait:")
+                    checked: optionsDialog.tempOptions["nohdmiwait"] || false
+                    onCheckedChanged: optionsDialog.tempOptions["nohdmiwait"] = checked
                 }
 
-                // SMC File Path
-                QQC2.Label {
-                    text: qsTr("SMC File:")
-                    font.bold: true
-                    color: Kirigami.Theme.disabledTextColor
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-                QQC2.TextField {
-                    id: smcPathField
-                    text: optionsDialog.tempSmcPath
-                    placeholderText: qsTr("Path to smc.bin…")
-                    Layout.fillWidth: true
-                    onTextChanged: optionsDialog.tempSmcPath = text
-                }
-
-                // Custom Arguments / Parameters
-                QQC2.Label {
-                    text: qsTr("Custom Flags:")
-                    font.bold: true
-                    color: Kirigami.Theme.disabledTextColor
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-                QQC2.TextField {
-                    id: customArgsField
-                    text: optionsDialog.tempCustomArgs
-                    placeholderText: qsTr("Extra build flags…")
-                    Layout.fillWidth: true
-                    onTextChanged: optionsDialog.tempCustomArgs = text
+                QQC2.CheckBox {
+                    Kirigami.FormData.label: qsTr("Clean SMC:")
+                    checked: optionsDialog.tempOptions["cleanSmc"] || false
+                    onCheckedChanged: optionsDialog.tempOptions["cleanSmc"] = checked
                 }
             }
         }
@@ -213,12 +164,7 @@ Item {
                 highlighted: true
                 QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.AcceptRole
                 onClicked: {
-                    root.advancedOptions = {
-                        "cpuKey": optionsDialog.tempCpuKey,
-                        "kvPath": optionsDialog.tempKvPath,
-                        "smcPath": optionsDialog.tempSmcPath,
-                        "customArgs": optionsDialog.tempCustomArgs
-                    }
+                    root.advancedOptions = optionsDialog.tempOptions
                     optionsDialog.accept()
                 }
             }
@@ -234,47 +180,73 @@ Item {
         Kirigami.FormLayout {
             Layout.fillWidth: true
 
-            // Dropdown 1: Build Type
-            QQC2.ComboBox {
-                id: buildTypeCombo
-                Kirigami.FormData.label: qsTr("Build Type:")
+            // Row 1: CPU Key
+            RowLayout {
+                Kirigami.FormData.label: qsTr("CPU Key:")
                 Layout.fillWidth: true
-                model: [qsTr("NAND Image"), qsTr("XeLL Image"), qsTr("Donor")]
-            }
+                spacing: Kirigami.Units.smallSpacing
 
-            // XeLL Image Mode Controls
-            QQC2.ComboBox {
-                id: xellHackCombo
-                Kirigami.FormData.label: qsTr("Hack:")
-                Layout.fillWidth: true
-                visible: root.isXeLL
-                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.xellHacks : []
-                onCurrentTextChanged: {
-                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
-                        nandBuilderController.setSelectedXellHack(currentText)
-                    }
+                QQC2.TextField {
+                    id: cpuKeyField
+                    Layout.fillWidth: true
+                    placeholderText: qsTr("Enter or generate 32-character CPU Key...")
+                    font.family: "Monospace"
+                    maximumLength: 32
+                }
+
+                QQC2.Button {
+                    text: qsTr("Generate")
+                    icon.name: "system-run"
+                    onClicked: root.generateCpuKey()
                 }
             }
 
-            QQC2.ComboBox {
-                id: xellImageCombo
-                Kirigami.FormData.label: qsTr("Image:")
+            // Row 2: Keyvault
+            RowLayout {
+                Kirigami.FormData.label: qsTr("Keyvault:")
                 Layout.fillWidth: true
-                visible: root.isXeLL
-                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.xellImages : []
-                onCurrentTextChanged: {
-                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
-                        nandBuilderController.setSelectedXellImage(currentText)
-                    }
+                spacing: Kirigami.Units.smallSpacing
+
+                QQC2.TextField {
+                    id: kvPathField
+                    Layout.fillWidth: true
+                    readOnly: true
+                    placeholderText: qsTr("Select or generate Keyvault file...")
+                }
+
+                QQC2.Button {
+                    text: qsTr("Browse")
+                    icon.name: "document-open"
+                    onClicked: kvFileDialog.open()
+                }
+
+                QQC2.Button {
+                    text: qsTr("Generate")
+                    icon.name: "document-new"
+                    onClicked: kvPathField.text = qsTr("Generic Keyvault")
                 }
             }
 
-            // NAND Image / Donor Mode Controls
+            // Row 3: CF LDV (Range 0 to 80)
+            QQC2.SpinBox {
+                id: cfLdvSpinBox
+                Kirigami.FormData.label: qsTr("CF LDV:")
+                from: 0
+                to: 80
+                value: 1
+                editable: true
+            }
+
+            // Separator
+            Kirigami.Separator {
+                Layout.fillWidth: true
+            }
+
+            // NAND Configuration Dropdowns
             QQC2.ComboBox {
                 id: versionCombo
                 Kirigami.FormData.label: qsTr("Version:")
                 Layout.fillWidth: true
-                visible: !root.isXeLL
                 model: typeof nandBuilderController !== "undefined" ? nandBuilderController.buildVersions : []
                 onCurrentTextChanged: {
                     if (typeof nandBuilderController !== "undefined" && currentText !== "") {
@@ -287,7 +259,6 @@ Item {
                 id: imageTypeCombo
                 Kirigami.FormData.label: qsTr("Image Type:")
                 Layout.fillWidth: true
-                visible: !root.isXeLL
                 model: typeof nandBuilderController !== "undefined" ? nandBuilderController.imageTypes : []
                 onCurrentTextChanged: {
                     if (typeof nandBuilderController !== "undefined" && currentText !== "") {
@@ -300,7 +271,6 @@ Item {
                 id: consoleCombo
                 Kirigami.FormData.label: qsTr("Console:")
                 Layout.fillWidth: true
-                visible: !root.isXeLL
                 model: typeof nandBuilderController !== "undefined" ? nandBuilderController.consoles : []
                 onCurrentTextChanged: {
                     if (typeof nandBuilderController !== "undefined" && currentText !== "") {
@@ -309,12 +279,12 @@ Item {
                 }
             }
 
-            // Row with Patches and Options Buttons on the same row
+            // Row with Patches and Options Buttons
             RowLayout {
                 Kirigami.FormData.label: qsTr("Patches & Options:")
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.mediumSpacing
-                visible: !root.isXeLL && versionCombo.currentText !== "" && imageTypeCombo.currentText !== "" && consoleCombo.currentText !== ""
+                visible: versionCombo.currentText !== "" && imageTypeCombo.currentText !== "" && consoleCombo.currentText !== ""
 
                 QQC2.Button {
                     id: patchesButton
@@ -359,17 +329,15 @@ Item {
 
             onClicked: {
                 var config = {
-                    "buildType": root.buildType,
+                    "mode": "donor",
+                    "cpuKey": root.cpuKey,
+                    "keyvaultPath": root.keyvaultPath,
+                    "cfLdv": root.cfLdv,
+                    "version": root.version,
+                    "imageType": root.imageType,
+                    "consoleModel": root.consoleModel,
                     "patches": root.activePatches,
                     "options": root.advancedOptions
-                }
-                if (root.isXeLL) {
-                    config["hack"] = root.xellHack
-                    config["image"] = root.xellImage
-                } else {
-                    config["version"] = root.version
-                    config["imageType"] = root.imageType
-                    config["console"] = root.consoleModel
                 }
                 root.buildRequested(config)
             }

@@ -156,6 +156,7 @@ qt_add_qml_module(genexis
         QML/Main.qml
         QML/components/NandBuilder.qml
         QML/components/NandBuilderAdvanced.qml
+        QML/components/NandBuilderDonor.qml
         QML/components/NandBuilderSimple.qml
         QML/components/StatusBar.qml
         QML/pages/BadUpdate.qml

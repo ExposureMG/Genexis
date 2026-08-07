@@ -6,30 +6,33 @@ import org.kde.kirigami as Kirigami
 Item {
     id: root
 
-    property bool isAdvanced: false
+    property int currentTabIndex: 0
 
     ColumnLayout {
         anchors.fill: parent
         spacing: Kirigami.Units.smallSpacing
 
-        // Top toggle row with QQC2.Switch
+        // Centred TabBar Navigation
         RowLayout {
             Layout.fillWidth: true
-            Layout.leftMargin: Kirigami.Units.largeSpacing
-            Layout.rightMargin: Kirigami.Units.largeSpacing
             Layout.topMargin: Kirigami.Units.smallSpacing
-            spacing: Kirigami.Units.smallSpacing
 
-            QQC2.Label {
-                text: qsTr("Advanced Options")
-                font.bold: true
-                Layout.alignment: Qt.AlignVCenter
-            }
+            Item { Layout.fillWidth: true }
 
-            QQC2.Switch {
-                id: advancedSwitch
-                checked: root.isAdvanced
-                onCheckedChanged: root.isAdvanced = checked
+            QQC2.TabBar {
+                id: navTabBar
+                currentIndex: root.currentTabIndex
+                onCurrentIndexChanged: root.currentTabIndex = currentIndex
+
+                QQC2.TabButton {
+                    text: qsTr("Simple")
+                }
+                QQC2.TabButton {
+                    text: qsTr("Advanced")
+                }
+                QQC2.TabButton {
+                    text: qsTr("Donor")
+                }
             }
 
             Item { Layout.fillWidth: true }
@@ -39,12 +42,17 @@ Item {
             Layout.fillWidth: true
         }
 
-        // Dynamic view container switching between Simple and Advanced components
+        // Dynamic view container switching between Simple, Advanced, and Donor components
         Loader {
             id: builderLoader
             Layout.fillWidth: true
             Layout.fillHeight: true
-            sourceComponent: root.isAdvanced ? advancedComponent : simpleComponent
+            sourceComponent: {
+                if (root.currentTabIndex === 0) return simpleComponent;
+                if (root.currentTabIndex === 1) return advancedComponent;
+                if (root.currentTabIndex === 2) return donorComponent;
+                return simpleComponent;
+            }
         }
     }
 
@@ -64,5 +72,10 @@ Item {
                 console.log("Advanced Build requested:", JSON.stringify(config))
             }
         }
+    }
+
+    Component {
+        id: donorComponent
+        NandBuilderDonor {}
     }
 }

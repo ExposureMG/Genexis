@@ -36,41 +36,32 @@ Item {
         implicitWidth: Kirigami.Units.gridUnit * 18
         implicitHeight: Kirigami.Units.gridUnit * 16
 
-        // Temporary check states while dialog is open
         property var tempStates: ({})
 
         onAboutToShow: {
-            // Copy activePatches state to tempStates
             var states = {}
-            for (var i = 0; i < patchesModel.count; i++) {
-                var patchName = patchesModel.get(i).name
+            var list = typeof nandBuilderController !== "undefined" ? nandBuilderController.availablePatches : []
+            for (var i = 0; i < list.length; i++) {
+                var patchName = list[i]
                 states[patchName] = root.activePatches.indexOf(patchName) !== -1
             }
             tempStates = states
-        }
-
-        ListModel {
-            id: patchesModel
-            ListElement { name: "nohdmiwait"; label: "nohdmiwait" }
-            ListElement { name: "USBdsec"; label: "USBdsec" }
         }
 
         contentItem: QQC2.ScrollView {
             clip: true
             ListView {
                 id: patchesListView
-                model: patchesModel
+                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.availablePatches : []
                 delegate: QQC2.CheckDelegate {
-                    required property string name
-                    required property string label
-                    required property int index
+                    required property string modelData
 
                     width: patchesListView.width
-                    text: label
-                    checked: patchesDialog.tempStates[name] || false
+                    text: modelData
+                    checked: patchesDialog.tempStates[modelData] || false
                     onCheckedChanged: {
                         var updated = Object.assign({}, patchesDialog.tempStates)
-                        updated[name] = checked
+                        updated[modelData] = checked
                         patchesDialog.tempStates = updated
                     }
                 }
@@ -92,8 +83,9 @@ Item {
                 QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.AcceptRole
                 onClicked: {
                     var selected = []
-                    for (var i = 0; i < patchesModel.count; i++) {
-                        var patchName = patchesModel.get(i).name
+                    var list = typeof nandBuilderController !== "undefined" ? nandBuilderController.availablePatches : []
+                    for (var i = 0; i < list.length; i++) {
+                        var patchName = list[i]
                         if (patchesDialog.tempStates[patchName]) {
                             selected.push(patchName)
                         }
@@ -194,9 +186,11 @@ Item {
                 Kirigami.FormData.label: qsTr("Patches:")
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.smallSpacing
+                visible: buildTypeCombo.currentText !== qsTr("XeLL Image") && buildVersionCombo.currentText !== "" && imageTypeCombo.currentText !== ""
 
                 QQC2.Button {
                     id: patchesButton
+                    enabled: imageTypeCombo.currentText !== "RGLoader"
                     text: root.activePatches.length > 0
                           ? qsTr("Patches (%1 selected)").arg(root.activePatches.length)
                           : qsTr("Patches")

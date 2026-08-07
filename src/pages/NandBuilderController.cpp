@@ -64,6 +64,7 @@ void NandBuilderController::refresh()
 {
     scanBuildVersions();
     scanXellHacks();
+    scanPatches();
 }
 
 void NandBuilderController::setSelectedVersion(const QString &version)
@@ -74,6 +75,7 @@ void NandBuilderController::setSelectedVersion(const QString &version)
     m_selectedVersion = version;
     Q_EMIT selectedVersionChanged();
     scanImageTypes();
+    scanPatches();
 }
 
 void NandBuilderController::setSelectedImageType(const QString &imageType)
@@ -345,6 +347,7 @@ void NandBuilderController::setSelectedSimpleVersion(const QString &version)
     m_selectedSimpleVersion = version;
     Q_EMIT selectedSimpleVersionChanged();
     scanSimpleImageTypes();
+    scanPatches();
 }
 
 void NandBuilderController::setSelectedSimpleImageType(const QString &imageType)
@@ -522,4 +525,34 @@ void NandBuilderController::scanSimpleHacks()
         m_selectedSimpleHack = m_simpleHacks.isEmpty() ? QString() : m_simpleHacks.first();
         Q_EMIT selectedSimpleHackChanged();
     }
+}
+
+void NandBuilderController::scanPatches()
+{
+    m_availablePatches.clear();
+
+    QString verToScan = getResolvedVersion();
+    if (verToScan.isEmpty()) {
+        verToScan = m_selectedVersion;
+    }
+
+    if (!verToScan.isEmpty()) {
+        QString binPath = QDir(getXeBuildDataPath()).filePath(verToScan + QStringLiteral("/bin"));
+        QDir binDir(binPath);
+        if (binDir.exists()) {
+            QFileInfoList entries = binDir.entryInfoList(QStringList{QStringLiteral("*.bin")}, QDir::Files);
+            for (const auto &entry : entries) {
+                QString fname = entry.fileName();
+                if (!fname.startsWith(QStringLiteral("patches_"), Qt::CaseInsensitive)) {
+                    QString patchName = entry.completeBaseName();
+                    if (!m_availablePatches.contains(patchName)) {
+                        m_availablePatches.append(patchName);
+                    }
+                }
+            }
+            m_availablePatches.sort(Qt::CaseInsensitive);
+        }
+    }
+
+    Q_EMIT availablePatchesChanged();
 }

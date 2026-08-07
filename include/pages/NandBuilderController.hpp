@@ -31,6 +31,8 @@ class NandBuilderController : public QObject {
     Q_PROPERTY(QStringList simpleHacks READ simpleHacks NOTIFY simpleHacksChanged)
     Q_PROPERTY(QString selectedSimpleHack READ selectedSimpleHack WRITE setSelectedSimpleHack NOTIFY selectedSimpleHackChanged)
 
+    Q_PROPERTY(QStringList availablePatches READ availablePatches NOTIFY availablePatchesChanged)
+
 public:
     explicit NandBuilderController(QObject *parent = nullptr);
     static NandBuilderController &instance();
@@ -67,6 +69,8 @@ public:
     QString selectedSimpleHack() const { return m_selectedSimpleHack; }
     Q_INVOKABLE void setSelectedSimpleHack(const QString &hack);
 
+    QStringList availablePatches() const { return m_availablePatches; }
+
     Q_INVOKABLE QString getResolvedVersion() const;
     Q_INVOKABLE QString getMappedUnderlyingImageType() const;
 
@@ -89,6 +93,7 @@ Q_SIGNALS:
     void selectedSimpleImageTypeChanged();
     void simpleHacksChanged();
     void selectedSimpleHackChanged();
+    void availablePatchesChanged();
 
 private:
     void scanBuildVersions();
@@ -99,6 +104,7 @@ private:
     void scanSimpleVersions();
     void scanSimpleImageTypes();
     void scanSimpleHacks();
+    void scanPatches();
 
     QString getXeBuildDataPath() const;
     QString getRgBuildDataPath() const;
@@ -126,4 +132,6 @@ private:
     QStringList m_simpleVersions;
     QStringList m_simpleImageTypes;
     QStringList m_simpleHacks;
+
+    QStringList m_availablePatches;
 };
