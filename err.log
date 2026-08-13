@@ -1,0 +1,18 @@
+[ 67%] Building CXX object CMakeFiles/genexis.dir/build/.rcc/qmlcache/genexis_QML/pages/nand/Updates_qml.cpp.o
+In file included from /usr/include/qt6/QtCore/qstring.h:1829,
+                 from /usr/include/qt6/QtCore/qobject.h:12,
+                 from /usr/include/qt6/QtCore/QObject:1,
+                 from /home/e3xp0/Projects/Genexis/include/pages/Flasher.hpp:3,
+                 from /home/e3xp0/Projects/Genexis/src/pages/Flasher.cpp:1:
+/usr/include/qt6/QtCore/qstringbuilder.h: In instantiation of ‘static void QConcatenable<QStringBuilder< <template-parameter-1-1>, <template-parameter-1-2> > >::appendTo(const type&, T*&) [with T = QChar; A = QStringBuilder<const char (&)[3], QString>; B = const char (&)[2]; type = QStringBuilder<QStringBuilder<const char (&)[3], QString>, const char (&)[2]>]’:
+/usr/include/qt6/QtCore/qstringbuilder.h:464:52:   required from ‘QString& operator+=(QString&, const QStringBuilder<LHS, RHS>&) [with A = QStringBuilder<const char (&)[3], QString>; B = const char (&)[2]]’
+  464 |     QConcatenable< QStringBuilder<A, B> >::appendTo(b, it);
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~
+/home/e3xp0/Projects/Genexis/src/pages/Flasher.cpp:141:72:   required from here
+  141 |                 item += " (" + QString::fromStdString(c.consoleType) + ")";
+      |                                                                        ^~~
+/usr/include/qt6/QtCore/qstringbuilder.h:403:37: error: cannot convert ‘QChar*’ to ‘char*&’
+  403 |         QConcatenableEx<B>::appendTo(p.b, out);
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/usr/include/qt6/QtCore/qstringbuilder.h:291:57: note: initializing argument 2 of ‘static void QConcatenable<const char [N]>::appendTo(const char*, char*&) [with long long int N = 2]’
+  291 |     static inline void appendTo(const char a[N], char *&out)

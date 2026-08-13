@@ -1,0 +1,16 @@
+[submodule "extern/xsvftool"]
+	path = extern/xsvftool
+	url = https://github.com/ExposureMG/xsvftool
+	branch = libxsvftool
+[submodule "extern/FTDI2SPI"]
+	path = extern/FTDI2SPI
+	url = https://github.com/ExposureMG/FTDI2SPI
+[submodule "extern/NandProMax"]
+	path = extern/NandProMax
+	url = https://github.com/ExposureMG/NandProMax.git
+[submodule "extern/UpdClient"]
+	path = extern/UpdClient
+	url = https://github.com/ExposureMG/UpdClient.git
+[submodule "extern/gxbuild3"]
+	path = extern/gxbuild3
+	url = https://github.com/ExposureMG/gxbuild3.git
