@@ -19,7 +19,7 @@ std::string ToLower(std::string s) {
   return s;
 }
 
-} // namespace
+} 
 
 std::string_view Trim(std::string_view sv) {
   while (!sv.empty() && std::isspace(static_cast<unsigned char>(sv.front())))
@@ -37,7 +37,7 @@ std::string_view StripInlineSemicolon(std::string_view sv) {
   return Trim(sv);
 }
 
-} // namespace
+} 
 
 const Section *Document::get(std::string_view name) const {
   auto it = sections.find(ToLower(std::string(name)));
@@ -117,7 +117,7 @@ std::expected<Document, ParseError> Parse(std::string_view content) {
 
     if (comma_pos != std::string_view::npos &&
         (equals_pos == std::string_view::npos || comma_pos < equals_pos)) {
-      // --- Format 1: key , value [, hash] ---
+      
       entry.key =
           std::string(Trim(StripInlineSemicolon(line.substr(0, comma_pos))));
 
@@ -133,7 +133,7 @@ std::expected<Document, ParseError> Parse(std::string_view content) {
         entry.value = std::string(Trim(StripInlineSemicolon(rest)));
       }
     } else if (equals_pos != std::string_view::npos) {
-      // --- Format 2: key = value ---
+      
       entry.key = std::string(Trim(line.substr(0, equals_pos)));
       std::string_view val = Trim(line.substr(equals_pos + 1));
       entry.value = std::string(StripInlineSemicolon(val));
@@ -252,4 +252,4 @@ Entry MakeEntry(std::string_view key, std::string_view value,
   };
 }
 
-} // namespace Ini
+} 

@@ -26,22 +26,22 @@ public:
 
     static StartupManager &instance();
 
-    /// Run full startup initialization sequence: AppData -> Settings -> Backends -> Updates
+    
     Q_INVOKABLE void runStartupSequence();
 
-    /// Query or initialize AppData directory location
+    
     QString appDataPath() const;
 
-    /// Path to the settings INI file (AppData/genexis.ini)
+    
     QString settingsPath() const;
 
-    /// Number of registered backends / modules
+    
     int loadedPluginsCount() const;
 
-    /// Returns true when startup sequence completes
+    
     bool isReady() const;
 
-    /// Stub/hook for update checks
+    
     Q_INVOKABLE bool checkForUpdates();
 
 Q_SIGNALS:

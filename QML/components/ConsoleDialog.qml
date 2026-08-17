@@ -28,7 +28,6 @@ Kirigami.Dialog {
         spacing: Kirigami.Units.mediumSpacing
         width: parent ? parent.width : undefined
 
-        // Optional progress bar section
         ColumnLayout {
             Layout.fillWidth: true
             visible: root.showProgress
@@ -50,7 +49,6 @@ Kirigami.Dialog {
             }
         }
 
-        // Black output console frame (styled identically to Flasher.qml)
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true

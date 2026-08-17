@@ -14,10 +14,8 @@ Kirigami.ApplicationWindow {
     minimumHeight: 480
     maximumWidth: 1280
 
-    // Suppress Kirigami's per-page header — our StatusBar replaces it
     pageStack.globalToolBar.style: Kirigami.ApplicationHeaderStyle.None
 
-    // Universal top status/title bar
     header: StatusBar {
         id: statusBar
 
@@ -31,7 +29,6 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    // Overlay navigation drawer — hamburger in StatusBar is the only trigger
     globalDrawer: Kirigami.GlobalDrawer {
         id: navDrawer
 
@@ -47,7 +44,7 @@ Kirigami.ApplicationWindow {
             },
             Kirigami.Action {
                 text: qsTr("NAND Info")
-                onTriggered: root.switchPage("pages/Nand.qml")
+                onTriggered: root.switchPage("pages/NandInfo.qml")
             },
             Kirigami.Action {
                 text: qsTr("NAND Builder")
@@ -79,7 +76,6 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    // Universal Error Dialog (No Footer pattern)
     Kirigami.PromptDialog {
         id: globalErrorDialog
         title: qsTr("Error")
@@ -94,7 +90,6 @@ Kirigami.ApplicationWindow {
         globalErrorDialog.open();
     }
 
-    // Universal Console Dialog (Black console with optional progress bar)
     ConsoleDialog {
         id: globalConsoleDialog
     }
@@ -126,7 +121,6 @@ Kirigami.ApplicationWindow {
         globalConsoleDialog.close();
     }
 
-    // Replace pageStack content and close the drawer
     function switchPage(url) {
         pageStack.clear();
         pageStack.push(Qt.resolvedUrl(url));

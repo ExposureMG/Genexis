@@ -7,18 +7,12 @@ import org.kde.kirigami as Kirigami
 QQC2.ToolBar {
     id: root
 
-    // Current page title — bound from Main.qml
     property string pageTitle: qsTr("Genexis")
 
-    // Emitted when the hamburger button is clicked
     signal menuRequested
-
-    // Emitted when the user confirms the open-file dialog
     signal fileOpened(string filePath, string key)
 
     position: QQC2.ToolBar.Header
-
-    //  Open File Dialog
     Kirigami.Dialog {
         id: openFileDialog
         title: qsTr("Open File")
@@ -29,7 +23,6 @@ QQC2.ToolBar {
             spacing: Kirigami.Units.largeSpacing
             implicitWidth: Kirigami.Units.gridUnit * 30
 
-            // Row 1: file path textbox + browse button
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.smallSpacing
@@ -56,14 +49,12 @@ QQC2.ToolBar {
                 }
             }
 
-            // Row 2: key input
             QQC2.TextField {
                 id: keyField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Key")
             }
 
-            // Row 3: cancel + confirm, centre-aligned
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.largeSpacing
@@ -94,7 +85,6 @@ QQC2.ToolBar {
         }
     }
 
-    // Native OS file picker — writes chosen path back into the text field
     FileDialog {
         id: filePicker
         onAccepted: {
@@ -111,7 +101,6 @@ QQC2.ToolBar {
     contentItem: RowLayout {
         spacing: 0
 
-        //  Hamburger / menu toggle
         QQC2.ToolButton {
             id: menuButton
             icon.name: "application-menu"
@@ -123,14 +112,12 @@ QQC2.ToolBar {
             QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
         }
 
-        //  Divider
         Kirigami.Separator {
             Layout.fillHeight: true
             Layout.topMargin: Kirigami.Units.smallSpacing
             Layout.bottomMargin: Kirigami.Units.smallSpacing
         }
 
-        //  Page title
         QQC2.Label {
             Layout.leftMargin: Kirigami.Units.largeSpacing
             text: root.pageTitle
@@ -139,7 +126,6 @@ QQC2.ToolBar {
             Layout.fillWidth: true
         }
 
-        //  Loading indicator
         RowLayout {
             visible: typeof nandController !== "undefined" && nandController.isLoading
             spacing: Kirigami.Units.smallSpacing
@@ -167,7 +153,6 @@ QQC2.ToolBar {
             }
         }
 
-        //  Open File action
         QQC2.ToolButton {
             text: qsTr("Open File")
             icon.name: "document-open"

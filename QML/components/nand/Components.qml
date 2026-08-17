@@ -9,13 +9,11 @@ Kirigami.ScrollablePage {
 
     title: qsTr("Components")
 
-    // Signal to request switching to Keyvault tab
     signal keyvaultRequested
 
     enabled: typeof nandController !== "undefined" && nandController.isNandLoaded
     opacity: enabled ? 1.0 : 0.45
 
-    // Component Metadata Properties bound to nandController
     property string smcConsole: typeof nandController !== "undefined" ? nandController.consoleTarget : ""
     property string smcVersion: typeof nandController !== "undefined" ? nandController.smcVersion : ""
     property string smcType: typeof nandController !== "undefined" ? nandController.smcType : ""
@@ -47,7 +45,6 @@ Kirigami.ScrollablePage {
     property string cf1Ldv: typeof nandController !== "undefined" ? nandController.cf1Ldv : ""
     property string cf1Pairing: typeof nandController !== "undefined" ? nandController.cf1Pairing : ""
 
-    // Keyvault Properties
     property string kvConsoleModel: typeof nandController !== "undefined" ? nandController.consoleTarget : ""
     property string kvType: typeof nandController !== "undefined" ? nandController.consoleType : ""
     property string kvSerial: typeof nandController !== "undefined" ? nandController.serialNumber : ""
@@ -55,7 +52,6 @@ Kirigami.ScrollablePage {
     property string kvDvdKey: typeof nandController !== "undefined" ? nandController.dvdKey : ""
     property string kvRegion: typeof nandController !== "undefined" ? nandController.gameRegion : ""
 
-    //  1. SMC Details Dialog
     QQC2.Dialog {
         id: smcDialog
         title: qsTr("SMC Firmware Details")
@@ -110,7 +106,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  2. CB Details Dialog
     QQC2.Dialog {
         id: cbDialog
         title: qsTr("CB Details")
@@ -185,7 +180,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  3. CB_A Details Dialog
     QQC2.Dialog {
         id: cbADialog
         title: qsTr("CB_A Details")
@@ -242,7 +236,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  4. CB_B Details Dialog
     QQC2.Dialog {
         id: cbBDialog
         title: qsTr("CB_B Details")
@@ -281,7 +274,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  5. CD Details Dialog
     QQC2.Dialog {
         id: cdDialog
         title: qsTr("CD Details")
@@ -320,7 +312,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  6. CE Details Dialog
     QQC2.Dialog {
         id: ceDialog
         title: qsTr("CE Details")
@@ -360,7 +351,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  7. XeLL Details Dialog
     QQC2.Dialog {
         id: xellDialog
         title: qsTr("XeLL Details")
@@ -405,7 +395,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  8. Patchslot 0 Details Dialog
     QQC2.Dialog {
         id: patch0Dialog
         title: qsTr("Patchslot 0 Details")
@@ -471,7 +460,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  9. Patchslot 1 Details Dialog
     QQC2.Dialog {
         id: patch1Dialog
         title: qsTr("Patchslot 1 Details")
@@ -537,7 +525,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  Placeholder Label when no components are loaded
     QQC2.Label {
         anchors.centerIn: parent
         visible: cardsView.count === 0
@@ -547,7 +534,6 @@ Kirigami.ScrollablePage {
         color: Kirigami.Theme.disabledTextColor
     }
 
-    //  Main CardsListView with Dynamic Cards Model
     Kirigami.CardsListView {
         id: cardsView
         anchors.fill: parent
@@ -556,7 +542,6 @@ Kirigami.ScrollablePage {
         delegate: DelegateChooser {
             role: "cardType"
 
-            // 1. SMC Firmware Choice
             DelegateChoice {
                 roleValue: "smc"
                 Kirigami.AbstractCard {
@@ -599,7 +584,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // 2. Generic CB Choice
+            
             DelegateChoice {
                 roleValue: "cb"
                 Kirigami.AbstractCard {
@@ -642,7 +627,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // 3. CB_A Choice
+            
             DelegateChoice {
                 roleValue: "cb_a"
                 Kirigami.AbstractCard {
@@ -685,7 +670,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // 4. CB_B Choice
+            
             DelegateChoice {
                 roleValue: "cb_b"
                 Kirigami.AbstractCard {
@@ -728,7 +713,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // 5. CD Choice
+            
             DelegateChoice {
                 roleValue: "cd"
                 Kirigami.AbstractCard {
@@ -771,7 +756,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // 6. CE Choice (Kernel)
+            
             DelegateChoice {
                 roleValue: "ce"
                 Kirigami.AbstractCard {
@@ -814,7 +799,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // 7. XeLL Choice
+            
             DelegateChoice {
                 roleValue: "xell"
                 Kirigami.AbstractCard {
@@ -857,7 +842,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // 8. Patchslot 0 Choice
+            
             DelegateChoice {
                 roleValue: "patch0"
                 Kirigami.AbstractCard {
@@ -900,7 +885,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // 9. Patchslot 1 Choice
+            
             DelegateChoice {
                 roleValue: "patch1"
                 Kirigami.AbstractCard {
@@ -943,7 +928,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // 10. Keyvault Choice
+            
             DelegateChoice {
                 roleValue: "keyvault"
                 Kirigami.AbstractCard {

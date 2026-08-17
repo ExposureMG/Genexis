@@ -9,15 +9,12 @@ Kirigami.ScrollablePage {
 
     title: qsTr("Bad Update")
 
-    // Output properties for component binding
     property alias entry: entryCombo.currentText
     property alias payload: payloadCombo.currentText
     property var activePatches: []
 
-    // Signal emitted when user confirms Save As
     signal saveRequested(string filePath, var config)
 
-    //  Patches Dialog
     QQC2.Dialog {
         id: patchesDialog
         title: qsTr("Configure Patches")
@@ -100,7 +97,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  File Save Dialog
     FileDialog {
         id: saveFileDialog
         title: qsTr("Save As")
@@ -116,7 +112,6 @@ Kirigami.ScrollablePage {
         }
     }
 
-    //  Main Page Layout
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Kirigami.Units.largeSpacing
@@ -125,7 +120,6 @@ Kirigami.ScrollablePage {
         Kirigami.FormLayout {
             Layout.fillWidth: true
 
-            // Dropdown 1: Entry
             QQC2.ComboBox {
                 id: entryCombo
                 Kirigami.FormData.label: qsTr("Entry:")
@@ -133,7 +127,6 @@ Kirigami.ScrollablePage {
                 model: ["Rock Band Blitz", "Avatar"]
             }
 
-            // Dropdown 2: Payload
             QQC2.ComboBox {
                 id: payloadCombo
                 Kirigami.FormData.label: qsTr("Payload:")
@@ -141,7 +134,6 @@ Kirigami.ScrollablePage {
                 model: ["FreeMyXe", "XeUnshackle"]
             }
 
-            // Patches Button Row
             RowLayout {
                 Kirigami.FormData.label: qsTr("Patches:")
                 Layout.fillWidth: true
@@ -168,7 +160,6 @@ Kirigami.ScrollablePage {
             Layout.fillHeight: true
         }
 
-        // Save As Button at bottom matching NandBuilder / Flasher style
         QQC2.Button {
             id: saveAsButton
             text: qsTr("Save As…")

@@ -427,7 +427,7 @@ GxBuild3Adapter::buildImage(const NandBuildConfig &config,
   std::string iniContent = buffer.str();
   iniFile.close();
 
-  // Parse CPU key hex string
+  
   std::vector<uint8_t> cpuKeyBytes;
   for (size_t i = 0; i + 1 < config.cpuKeyHex.length(); i += 2) {
     try {
@@ -521,4 +521,4 @@ GxBuild3Adapter::buildImage(const NandBuildConfig &config,
   return bResult;
 }
 
-} // namespace gxapi::backend
+} 

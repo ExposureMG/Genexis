@@ -59,19 +59,19 @@ public:
   }
   QString detectedHardwareInfo() const { return m_detectedHardwareInfo; }
 
-  /// Search for active UpdServer consoles over the local network via UDP
+  
   Q_INVOKABLE void searchNetworkDevices();
 
-  /// Run hardware detection: JTAG chain scan (if .svf/.xsvf) or Flash Config
-  /// read (if SPI/eMMC)
+  
+  
   Q_INVOKABLE void detectHardware(const QString &filePath = {});
 
-  /// Perform NAND read/write/erase or CPLD timing flash operation
+  
   Q_INVOKABLE void performOperation(const QString &filePath,
                                     const QString &operation,
                                     const QVariantMap &options = {});
 
-  /// Manually trigger a USB flasher device scan
+  
   Q_INVOKABLE void checkUsbDevices();
 
 Q_SIGNALS:

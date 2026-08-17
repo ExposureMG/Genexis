@@ -20,15 +20,14 @@ Genexis should compile for all Linux and BSD distros, but we only provide offici
 
 Genexis should also compile for x86-32, x86-64, and arm64.
 
-| OS                 | Support                                                   | 32-bit | 64-bit | arm64    | Compilers        |
-| ------------------ | --------------------------------------------------------- | ------ | ------ | -------- | ---------------- |
-| Windows 10+        | ✅                                                        | ✅     | ✅     | ✅       | MSVC, GCC, Clang |
-| Windows Vista SP2+ | [Genexis Qt5](https://github.com/ExposureMG/Genexis-qt5)] | ✅     | ✅     | ⚠️       | MinGW            |
-| Linux              | ✅                                                        | ✅     | ✅     | ✅       | GCC, Clang       |
-| MacOS              | ✅                                                        | ⚠️     | ✅     | ✅       | Clang            |
-| Android            | ✅                                                        | ⚠️     | ⚠️     | ✅       | Clang            |
-| IPadOS             | ✅                                                        | ⚠️     | ⚠️     | M-Series | Clang            |
-
+| OS                 | Support                                              | 32-bit | 64-bit | arm64    | Compilers        |
+| ------------------ | ---------------------------------------------------- | ------ | ------ | -------- | ---------------- |
+| Windows 10+        | ✅                                                   | ✅     | ✅     | ✅       | MSVC, GCC, Clang |
+| Windows Vista SP2+ | [Genexis Qt5](https://github.com/GxOSS/Genexis-qt5)] | ✅     | ✅     | ⚠️       | MinGW            |
+| Linux              | ✅                                                   | ✅     | ✅     | ✅       | GCC, Clang       |
+| MacOS              | ✅                                                   | ⚠️     | ✅     | ✅       | Clang            |
+| Android            | ✅                                                   | ⚠️     | ⚠️     | ✅       | Clang            |
+| IPadOS             | ✅                                                   | ⚠️     | ⚠️     | M-Series | Clang            |
 
 ## Devices
 

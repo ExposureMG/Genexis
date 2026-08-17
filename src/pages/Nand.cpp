@@ -42,7 +42,7 @@ static QString bytesToHex(const uint8_t *data, size_t size) {
   return QString::fromStdString(ss.str()).toUpper();
 }
 
-} // namespace
+} 
 
 Nand::Nand(QObject *parent) : QObject(parent) {}
 
@@ -138,7 +138,7 @@ void Nand::openFile(const QString &filePath, const QString &cpuKey) {
   if (ext == QStringLiteral("svf") || ext == QStringLiteral("xsvf")) {
     m_loadedFilePath = cleanPath;
     Q_EMIT loadedFilePathChanged();
-    // Timing files keep all NAND metadata greyed out
+    
     qDebug() << "[Nand] Opened timing file (.svf/.xsvf) -> keeping NAND "
                 "metadata empty/greyed.";
     return;
@@ -251,11 +251,11 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
   m_isNandLoaded = true;
   Q_EMIT nandStateChanged();
 
-  // Image size formatting
+  
   double sizeMb = static_cast<double>(data.size()) / (1024.0 * 1024.0);
   m_imageSize = QString::number(sizeMb, 'f', 0) + QStringLiteral(" MB");
 
-  // Header & Bootloaders
+  
   if (results.cbb) {
     m_cbAVersion = QString::number(results.cb_or_a.version);
     m_cbBVersion = QString::number(results.cbb->version);
@@ -288,7 +288,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
   if (results.cg1)
     m_cg1Version = QString::number(results.cg1->version);
 
-  // Extract LDV & Pairing Data for 2BL / CB_A
+  
   if (results.cb_or_a.offset != 0 &&
       results.cb_or_a.offset + results.cb_or_a.size <= data.size()) {
     std::vector<uint8_t> cbBytes(data.begin() + results.cb_or_a.offset,
@@ -311,7 +311,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     }
   }
 
-  // Extract LDV & Pairing Data for 6BL 0 (CF0) and 6BL 1 (CF1)
+  
   if (results.cf0 && results.cf0->offset + results.cf0->size <= data.size()) {
     std::vector<uint8_t> cfBytes(data.begin() + results.cf0->offset,
                                  data.begin() + results.cf0->offset +
@@ -342,7 +342,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
                       QString::number(results.smc_config_offset, 16).toUpper();
   m_smcSize = QString::number(results.smc_size) + QStringLiteral(" bytes");
 
-  // Decrypt SMC Firmware
+  
   if (results.smc_offset != 0 && results.smc_size != 0 &&
       (results.smc_offset + results.smc_size) <= data.size()) {
     std::vector<uint8_t> rawSmc(data.begin() + results.smc_offset,
@@ -370,7 +370,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
   qDebug() << "[Nand] NAND metadata successfully loaded. CB Version:"
            << m_cbVersion << "SMC Type:" << m_smcType;
 
-  // Dynamically discover and populate components list
+  
   m_components.clear();
 
   if (results.smc_offset != 0) {

@@ -8,13 +8,11 @@ Kirigami.ScrollablePage {
 
     title: qsTr("Settings")
 
-    // Output properties for data binding / backend configuration
     property alias buildBackend: buildBackendCombo.currentText
     property alias flashBackend: flashBackendCombo.currentText
     property alias timingFlashBackend: timingBackendCombo.currentText
     property alias wirelessBackend: wirelessBackendCombo.currentText
 
-    // Signals for Load & Save actions
     signal loadRequested
     signal saveRequested(var config)
 
@@ -36,7 +34,6 @@ Kirigami.ScrollablePage {
         Kirigami.FormLayout {
             Layout.fillWidth: true
 
-            // Dropdown 1: Build Backend
             QQC2.ComboBox {
                 id: buildBackendCombo
                 Kirigami.FormData.label: qsTr("Build Backend:")
@@ -44,7 +41,6 @@ Kirigami.ScrollablePage {
                 model: (typeof settingsController !== "undefined" && settingsController.availableBuildBackends.length > 0) ? settingsController.availableBuildBackends : ["gxbuild3"]
             }
 
-            // Dropdown 2: Flash Backend
             QQC2.ComboBox {
                 id: flashBackendCombo
                 Kirigami.FormData.label: qsTr("Flash Backend:")
@@ -52,7 +48,6 @@ Kirigami.ScrollablePage {
                 model: (typeof settingsController !== "undefined" && settingsController.availableFlashBackends.length > 0) ? settingsController.availableFlashBackends : ["NandProMax", "FTDI2SPI", "UpdClient"]
             }
 
-            // Dropdown 3: Timing Flash Backend
             QQC2.ComboBox {
                 id: timingBackendCombo
                 Kirigami.FormData.label: qsTr("Timing Flash Backend:")
@@ -60,7 +55,6 @@ Kirigami.ScrollablePage {
                 model: (typeof settingsController !== "undefined" && settingsController.availableTimingFlashBackends.length > 0) ? settingsController.availableTimingFlashBackends : ["NandProMax", "xsvftool"]
             }
 
-            // Dropdown 4: Wireless Backend
             QQC2.ComboBox {
                 id: wirelessBackendCombo
                 Kirigami.FormData.label: qsTr("Wireless Backend:")
@@ -73,7 +67,6 @@ Kirigami.ScrollablePage {
             Layout.fillHeight: true
         }
 
-        // Pinned to bottom, same row: Load button & Save button
         RowLayout {
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 18

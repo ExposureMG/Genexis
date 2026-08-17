@@ -13,7 +13,6 @@ Kirigami.ScrollablePage {
     property alias operation: operationCombo.currentText
     property string logText: qsTr("[INFO] Flasher initialized.\n[INFO] Ready for operation.\n")
 
-    // Dynamic Action Button text calculation
     function getActionButtonText() {
         var ext = root.selectedFilePath.split('.').pop().toLowerCase();
         var isJtag = (ext === "svf" || ext === "xsvf");
@@ -30,20 +29,19 @@ Kirigami.ScrollablePage {
         return qsTr("Execute");
     }
 
-    // Timing Wizard Stub Dialog
     QQC2.Dialog {
         id: timingWizardDialog
         title: qsTr("Timing Wizard")
         modal: true
         parent: QQC2.Overlay.overlay
         anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 20
+        implicitWidth: Kirigami.Units.gridUnit * 22
         implicitHeight: Kirigami.Units.gridUnit * 12
 
         contentItem: ColumnLayout {
             spacing: Kirigami.Units.mediumSpacing
             QQC2.Label {
-                text: qsTr("Automatic CPLD Timing Wizard\n(Feature stub — Timing bitstream profiles will be dynamically optimized for glitch timing).")
+                text: qsTr("CPLD Timing Wizard stub")
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
@@ -64,7 +62,7 @@ Kirigami.ScrollablePage {
         anchors.margins: Kirigami.Units.largeSpacing
         spacing: Kirigami.Units.largeSpacing
 
-        // --- Row 1: Image Box (Hardware Preview Only) ---
+        
         Kirigami.AbstractCard {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
@@ -85,11 +83,9 @@ Kirigami.ScrollablePage {
             }
         }
 
-        // --- FormLayout (Mobile-friendly sizes, each item on its own row) ---
         Kirigami.FormLayout {
             Layout.fillWidth: true
 
-            // Row 2: Flasher Dropdown
             QQC2.ComboBox {
                 id: flasherCombo
                 Kirigami.FormData.label: qsTr("Flasher:")
@@ -103,7 +99,7 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // --- Conditional UpdClient Rows (if UPDCLIENT=TRUE) ---
+            
             RowLayout {
                 id: ipRow
                 Kirigami.FormData.label: qsTr("IP:")
@@ -150,7 +146,6 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // Row 3: Detected (Read-only textbox, greyed out if UPDCLIENT=TRUE)
             QQC2.TextField {
                 id: detectedField
                 Kirigami.FormData.label: qsTr("Detected:")
@@ -160,7 +155,6 @@ Kirigami.ScrollablePage {
                 text: (typeof flasherController !== "undefined") ? flasherController.detectedHardwareInfo : qsTr("000000")
             }
 
-            // Row 4: Selected File (Read-only textbox from status bar / Open File)
             QQC2.TextField {
                 id: selectedFileField
                 Kirigami.FormData.label: qsTr("Selected File:")
@@ -169,7 +163,6 @@ Kirigami.ScrollablePage {
                 text: root.selectedFilePath !== "" ? root.selectedFilePath : qsTr("None")
             }
 
-            // Row 5: Operation Dropdown [Read, Erase, Write, Detect]
             QQC2.ComboBox {
                 id: operationCombo
                 Kirigami.FormData.label: qsTr("Operation:")
@@ -177,7 +170,6 @@ Kirigami.ScrollablePage {
                 model: [qsTr("Read"), qsTr("Erase"), qsTr("Write"), qsTr("Detect")]
             }
 
-            // Row 6: Timing Wizard (stub button)
             QQC2.Button {
                 id: timingWizardButton
                 Kirigami.FormData.label: qsTr("Tools:")
@@ -217,7 +209,6 @@ Kirigami.ScrollablePage {
             }
         }
 
-        // --- Bottom Row: Dynamic Action Button ---
         QQC2.Button {
             id: actionButton
             text: root.getActionButtonText()

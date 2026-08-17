@@ -95,4 +95,4 @@ std::vector<std::string> BackendManager::getAvailableNetworkBackends() const {
   return {"UpdClient"};
 }
 
-} // namespace gxapi::backend
+} 

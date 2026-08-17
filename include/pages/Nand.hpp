@@ -18,7 +18,7 @@ class Nand : public QObject {
       QString loadedFilePath READ loadedFilePath NOTIFY loadedFilePathChanged)
   Q_PROPERTY(QString cpuKey READ cpuKey WRITE setCpuKey NOTIFY cpuKeyChanged)
 
-  // Overview / Header
+  
   Q_PROPERTY(QString consoleTarget READ consoleTarget NOTIFY metadataChanged)
   Q_PROPERTY(QString buildType READ buildType NOTIFY metadataChanged)
   Q_PROPERTY(QString imageSize READ imageSize NOTIFY metadataChanged)
@@ -26,7 +26,7 @@ class Nand : public QObject {
   Q_PROPERTY(QString headerVersion READ headerVersion NOTIFY metadataChanged)
   Q_PROPERTY(QString patchSlots READ patchSlots NOTIFY metadataChanged)
 
-  // Bootloaders
+  
   Q_PROPERTY(QString cbVersion READ cbVersion NOTIFY metadataChanged)
   Q_PROPERTY(QString cbAVersion READ cbAVersion NOTIFY metadataChanged)
   Q_PROPERTY(QString cbBVersion READ cbBVersion NOTIFY metadataChanged)
@@ -42,7 +42,7 @@ class Nand : public QObject {
   Q_PROPERTY(QString cf1Version READ cf1Version NOTIFY metadataChanged)
   Q_PROPERTY(QString cg1Version READ cg1Version NOTIFY metadataChanged)
 
-  // Bootloader Metadata (LDV & Pairing Data)
+  
   Q_PROPERTY(QString cbLdv READ cbLdv NOTIFY metadataChanged)
   Q_PROPERTY(QString cbPairing READ cbPairing NOTIFY metadataChanged)
   Q_PROPERTY(QString cbALdv READ cbALdv NOTIFY metadataChanged)
@@ -52,14 +52,14 @@ class Nand : public QObject {
   Q_PROPERTY(QString cf1Ldv READ cf1Ldv NOTIFY metadataChanged)
   Q_PROPERTY(QString cf1Pairing READ cf1Pairing NOTIFY metadataChanged)
 
-  // SMC
+  
   Q_PROPERTY(QString smcVersion READ smcVersion NOTIFY metadataChanged)
   Q_PROPERTY(QString smcType READ smcType NOTIFY metadataChanged)
   Q_PROPERTY(
       QString smcConfigOffset READ smcConfigOffset NOTIFY metadataChanged)
   Q_PROPERTY(QString smcSize READ smcSize NOTIFY metadataChanged)
 
-  // Keyvault
+  
   Q_PROPERTY(QString serialNumber READ serialNumber NOTIFY metadataChanged)
   Q_PROPERTY(QString consoleId READ consoleId NOTIFY metadataChanged)
   Q_PROPERTY(QString dvdKey READ dvdKey NOTIFY metadataChanged)
@@ -68,7 +68,7 @@ class Nand : public QObject {
   Q_PROPERTY(QString kvVersion READ kvVersion NOTIFY metadataChanged)
   Q_PROPERTY(QString ldvCount READ ldvCount NOTIFY metadataChanged)
 
-  // Dynamic Components List
+  
   Q_PROPERTY(QVariantList components READ components NOTIFY componentsChanged)
 
 public:

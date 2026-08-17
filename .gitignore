@@ -1,3 +1,4 @@
 build
-UIPLANS
+PLANS
 *.bin
+_*

@@ -54,9 +54,7 @@ Kirigami.ScrollablePage {
 
         Kirigami.FormLayout {
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignHCenter
-
-            // Serial Number
+            Layout.alignment: Q
             RowLayout {
                 Kirigami.FormData.label: qsTr("Serial Number:")
                 Layout.fillWidth: true
@@ -81,7 +79,6 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // Console ID
             RowLayout {
                 Kirigami.FormData.label: qsTr("Console ID:")
                 Layout.fillWidth: true
@@ -106,7 +103,6 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // DVD Key
             RowLayout {
                 Kirigami.FormData.label: qsTr("DVD Key:")
                 Layout.fillWidth: true
@@ -131,7 +127,6 @@ Kirigami.ScrollablePage {
                 }
             }
 
-            // Game Region
             QQC2.TextField {
                 Kirigami.FormData.label: qsTr("Game Region:")
                 text: typeof nandController !== "undefined" ? nandController.gameRegion : ""
@@ -140,7 +135,6 @@ Kirigami.ScrollablePage {
                 Layout.fillWidth: true
             }
 
-            // Console Type
             QQC2.TextField {
                 Kirigami.FormData.label: qsTr("Console Type:")
                 text: typeof nandController !== "undefined" ? nandController.consoleType : ""

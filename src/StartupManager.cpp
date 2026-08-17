@@ -15,7 +15,7 @@ StartupManager &StartupManager::instance() {
 void StartupManager::runStartupSequence() {
   qDebug() << "[StartupManager] Starting Genexis startup sequence...";
 
-  // Initialize gxbuild3 logging system
+  
   Log::Init();
 
   Q_EMIT startupProgress(0.1,
@@ -64,7 +64,7 @@ void StartupManager::registerSettings() {
 void StartupManager::registerBackends() {
   gxapi::backend::BackendManager::instance().initialize();
   m_loadedPluginsCount =
-      5; // NandProMax, FTDI2SPI, xsvftool, UpdClient, gxbuild3
+      5; 
 
   Q_EMIT pluginsLoaded(m_loadedPluginsCount);
   qDebug() << "[StartupManager] Initialized built-in submodule backends "
@@ -72,7 +72,7 @@ void StartupManager::registerBackends() {
 }
 
 bool StartupManager::checkForUpdates() {
-  // Stub / Hook for update checks
+  
   qDebug() << "[StartupManager] Update check performed (no updates currently "
               "pending).";
   return false;

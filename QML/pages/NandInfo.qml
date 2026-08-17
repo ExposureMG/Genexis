@@ -12,15 +12,15 @@ Kirigami.Page {
         id: subPageModel
         ListElement {
             name: "Overview"
-            pageUrl: "nand/Overview.qml"
+            pageUrl: "../components/nand/Overview.qml"
         }
         ListElement {
             name: "Components"
-            pageUrl: "nand/Components.qml"
+            pageUrl: "../components/nand/Components.qml"
         }
         ListElement {
             name: "Keyvault"
-            pageUrl: "nand/Keyvault.qml"
+            pageUrl: "../components/nand/Keyvault.qml"
         }
     }
 

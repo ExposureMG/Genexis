@@ -125,7 +125,6 @@ std::expected<void, std::string> UpdClientAdapter::shutdownConsole() {
   return {};
 }
 
-// IFlashService implementation
 std::expected<FlashInfo, std::string>
 UpdClientAdapter::getFlashInfo(const FlashDeviceConfig &config) {
   if (!isConnected() && !config.ipAddress.empty()) {
@@ -198,4 +197,4 @@ UpdClientAdapter::eraseNand(uint32_t startBlock, uint32_t blockCount,
   return {};
 }
 
-} // namespace gxapi::backend
+} 

@@ -11,7 +11,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# Clear MAKEFLAGS environment variable to prevent cargo build scripts from inheriting parent make flags
+
 set(ENV{MAKEFLAGS} "")
 
 find_package(ECM 6.0.0 REQUIRED NO_MODULE)
@@ -25,13 +25,10 @@ include(ECMQmlModule)
 
 kde_enable_exceptions()
 
-
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-
-# x86-64 Only
 if(NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64|x64)$" OR CMAKE_VS_PLATFORM_NAME STREQUAL "x64"))
     message(FATAL_ERROR "Genexis can only be compiled on x86-64 architecture.")
 endif()
@@ -40,19 +37,18 @@ if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "Genexis can only be compiled for 64-bit (x86-64) target.")
 endif()
 
-# OS and Compiler Guards
 if(WIN32)
-    # If windows: MSVC only
+    
     if(NOT MSVC)
         message(FATAL_ERROR "Windows builds require MSVC compiler.")
     endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    # If Linux: G++ or Clang++ only
+    
     if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
         message(FATAL_ERROR "Linux builds require GCC (g++) or Clang (clang++) compiler.")
     endif()
 elseif(APPLE)
-    # If MacOS: Clang++ only
+    
     if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         message(FATAL_ERROR "MacOS builds require Clang++ compiler.")
     endif()
@@ -86,11 +82,6 @@ find_package(KF6 REQUIRED COMPONENTS
 add_compile_options($<$<COMPILE_LANGUAGE:C>:-Dasm=__asm__>)
 add_compile_options(-Wno-error=zero-as-null-pointer-constant -Wno-zero-as-null-pointer-constant -Wno-error=date-time -Wno-date-time)
 
-# Subdirectories to compile with Genexis
-# Force static builds for gxbuild3/stfs/UpdClient/FTDI2SPI/xsvftool: KDE/ECM sets BUILD_SHARED_LIBS=ON
-# globally. Neither gxbuild3, stfs, nor UpdClient have symbol visibility annotations,
-# so building them as shared libraries leaves all their symbols hidden and unresolvable.
-# spdlog's local-exec TLS model is also incompatible with -shared.
 set(BUILD_SHARED_LIBS OFF)
 add_subdirectory(extern/gxbuild3)
 add_subdirectory(extern/UpdClient)
@@ -120,7 +111,6 @@ target_link_libraries(FTDI2SPI PRIVATE ftdi1-static)
 
 set(BUILD_SHARED_LIBS ON)
 
-# Build NandProMax static library with Cargo
 set(NANDPROMAX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/NandProMax)
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CARGO_BUILD_FLAG "--release")
@@ -216,24 +206,32 @@ qt_add_qml_module(genexis
     QML_FILES
         QML/Main.qml
         QML/components/ConsoleDialog.qml
+        QML/components/KeyvaultSheet.qml
         QML/components/NandBuilder.qml
         QML/components/NandBuilderAdvanced.qml
         QML/components/NandBuilderDonor.qml
         QML/components/NandBuilderSimple.qml
         QML/components/StatusBar.qml
+        
+        
+        
+        
+        
+        
+        
+        QML/components/nand/Components.qml
+        QML/components/nand/Keyvault.qml
+        QML/components/nand/Overview.qml
+        QML/components/nand/parts/Bootloaders.qml
+        QML/components/nand/parts/Kernel.qml
+        QML/components/nand/parts/Smc.qml
+        QML/components/nand/parts/Updates.qml
         QML/pages/BadUpdate.qml
         QML/pages/Flasher.qml
         QML/pages/Home.qml
-        QML/pages/Nand.qml
         QML/pages/NandBuilder.qml
+        QML/pages/NandInfo.qml
         QML/pages/Settings.qml
-        QML/pages/nand/Bootloaders.qml
-        QML/pages/nand/Components.qml
-        QML/pages/nand/Kernel.qml
-        QML/pages/nand/Keyvault.qml
-        QML/pages/nand/Overview.qml
-        QML/pages/nand/Smc.qml
-        QML/pages/nand/Updates.qml
     RESOURCES
         assets/demon.png
         assets/jrp.png

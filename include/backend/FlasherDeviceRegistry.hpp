@@ -17,16 +17,14 @@ struct FlasherDeviceProfile {
   std::vector<uint16_t> vidOnlyList{};
 };
 
-/// Master registry table of known Xbox 360 hardware flashers.
-/// To add a new hardware flasher, simply add an entry to this list.
 inline const std::vector<FlasherDeviceProfile> KnownFlasherDevices = {
-    // PicoFlasher / RP2040 / RP2350
+    
     {.displayName = "PicoFlasher",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/picoflasher.png",
      .flashBackendName = "NandProMax",
      .vidPidList = {{0x600D, 0x7001}},
      .vidOnlyList = {0x2E8A, 0x600D}},
-    // xFlasher & FTDI FT2232 / FT232 / FT4232 / FT232H devices
+    
     {.displayName = "xFlasher",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/xflasher.png",
      .flashBackendName = "FTDI2SPI",
@@ -37,14 +35,14 @@ inline const std::vector<FlasherDeviceProfile> KnownFlasherDevices = {
                     {0x0403, 0x6014},
                     {0x0403, 0x6015}},
      .vidOnlyList = {0x0403}},
-    // Nand-X / LPC2148 / J-Runner Programmer
+    
     {.displayName = "Nand-X / LPC",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/nandx.png",
      .flashBackendName = "NandProMax",
      .jtagBackendName = "NandProMax",
      .vidPidList = {{0xFFFF, 0x0004}},
      .vidOnlyList = {}},
-    // Team Xecuter DemoN
+    
     {.displayName = "TX DemoN",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/demon.png",
      .flashBackendName = "NandProMax",
@@ -57,7 +55,6 @@ inline const std::vector<FlasherDeviceProfile> KnownFlasherDevices = {
      .vidPidList = {{0x1209, 0xC0CA}},
      .vidOnlyList = {}}};
 
-/// Find flasher profile by USB Vendor ID and Product ID
 inline std::optional<FlasherDeviceProfile> findDeviceByVidPid(uint16_t vid,
                                                               uint16_t pid) {
   for (const auto &dev : KnownFlasherDevices) {
@@ -75,7 +72,6 @@ inline std::optional<FlasherDeviceProfile> findDeviceByVidPid(uint16_t vid,
   return std::nullopt;
 }
 
-/// Find flasher profile by display or alias name
 inline std::optional<FlasherDeviceProfile>
 findDeviceByName(const std::string &name) {
   std::string lowerName = name;
@@ -94,4 +90,4 @@ findDeviceByName(const std::string &name) {
   return std::nullopt;
 }
 
-} // namespace gxapi::backend
+} 

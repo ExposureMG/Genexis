@@ -23,7 +23,6 @@ Kirigami.Page {
         anchors.margins: Kirigami.Units.largeSpacing
         spacing: Kirigami.Units.largeSpacing
 
-        //  Active Target NAND Image Card
         Kirigami.AbstractCard {
             Layout.fillWidth: true
 

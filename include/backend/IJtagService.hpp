@@ -10,7 +10,7 @@
 namespace gxapi::backend {
 
 struct JtagDeviceConfig {
-  std::string backend; // e.g. "FTDI", "DirtyJTAG"
+  std::string backend; 
   uint32_t clockFrequencyHz{0};
 };
 
@@ -38,4 +38,4 @@ public:
             JtagProgressCallback progressCb = nullptr) = 0;
 };
 
-} // namespace gxapi::backend
+} 

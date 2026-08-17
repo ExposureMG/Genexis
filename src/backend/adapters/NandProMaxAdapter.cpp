@@ -52,7 +52,7 @@ static std::string formatErrorMessage(const std::string &action, int rc,
   return errReason;
 }
 
-} // namespace
+} 
 
 std::expected<FlashInfo, std::string>
 NandProMaxAdapter::getFlashInfo(const FlashDeviceConfig &config) {
@@ -223,8 +223,8 @@ NandProMaxAdapter::eraseNand(uint32_t startBlock, uint32_t blockCount,
   int rc = nandpromax_cmd_write_nand(
       "/dev/null", NANDPRO_DEV_AUTO, NANDPRO_MEDIA_AUTO, startBlock, blockCount,
       true,
-      true,  // erase = true
-      false, // verify = false
+      true,  
+      false, 
       config.serialNumber.empty() ? nullptr : config.serialNumber.c_str(),
       config.ipAddress.empty() ? nullptr : config.ipAddress.c_str(),
       config.timeoutMs, &progress);
@@ -315,4 +315,4 @@ NandProMaxAdapter::flashCpld(const std::filesystem::path &bitstreamPath,
   return {};
 }
 
-} // namespace gxapi::backend
+} 

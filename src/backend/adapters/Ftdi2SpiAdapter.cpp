@@ -4,7 +4,6 @@
 #include <mutex>
 #include <string>
 
-// Declarations from FTDI2SPI
 extern "C" {
 int spi(int mode, int size, char *file, int startblock, int length);
 int emmc_read(const char *file, int startblock, int length);
@@ -40,14 +39,14 @@ static std::string interpretFtdiError(int rc) {
     return "FTDI operation failed with error code: " + std::to_string(rc);
   }
 }
-} // namespace
+} 
 
 std::expected<FlashInfo, std::string>
 Ftdi2SpiAdapter::getFlashInfo(const FlashDeviceConfig &config) {
   std::lock_guard<std::mutex> lock(g_ftdiMutex);
   (void)config;
 
-  int rc = spi(0, 16, nullptr, 0, 0); // mode 0 = Get Flash Config Only
+  int rc = spi(0, 16, nullptr, 0, 0); 
   if (rc != 0) {
     return std::unexpected(interpretFtdiError(rc));
   }
@@ -80,8 +79,8 @@ Ftdi2SpiAdapter::readNand(const std::filesystem::path &outputPath,
     rc = emmc_read(pathStr.c_str(), static_cast<int>(startBlock),
                    static_cast<int>(blockCount));
   } else {
-    // Mode 1: read with spare (0x210 block size, standard
-    // 16MB/64MB/256MB/512MB)
+    
+    
     int sizeMb =
         (blockCount > 0) ? static_cast<int>((blockCount * 16) / 1024) : 16;
     if (sizeMb < 16)
@@ -132,7 +131,7 @@ Ftdi2SpiAdapter::writeNand(const std::filesystem::path &inputPath,
   if (config.media == FlashMediaType::Emmc) {
     rc = emmc_write(pathStr.c_str(), static_cast<int>(startBlock), 0);
   } else {
-    // Mode 3: standard write, Mode 4: write with ECC patch
+    
     rc = spi(3, 16, const_cast<char *>(pathStr.c_str()),
              static_cast<int>(startBlock), 0);
   }
@@ -171,4 +170,4 @@ Ftdi2SpiAdapter::eraseNand(uint32_t startBlock, uint32_t blockCount,
   return {};
 }
 
-} // namespace gxapi::backend
+} 

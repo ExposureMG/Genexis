@@ -9,7 +9,6 @@ Item {
     property int currentTabIndex: 0
     property string buildLogText: ""
 
-    //  Controller Signals Connection
     Connections {
         target: typeof nandBuilderController !== "undefined" ? nandBuilderController : null
 
@@ -64,12 +63,9 @@ Item {
         }
     }
 
-    //  Main Layout
     ColumnLayout {
         anchors.fill: parent
         spacing: Kirigami.Units.smallSpacing
-
-        // Centred TabBar Navigation
         RowLayout {
             Layout.fillWidth: true
             Layout.topMargin: Kirigami.Units.smallSpacing
@@ -103,7 +99,6 @@ Item {
             Layout.fillWidth: true
         }
 
-        // Dynamic view container switching between Simple, Advanced, and Donor components
         Loader {
             id: builderLoader
             Layout.fillWidth: true

@@ -9,7 +9,6 @@
 
 namespace Utils {
 
-// Endian Big-Endian Reads
 [[nodiscard]] std::uint16_t readBE16(const std::byte *ptr) noexcept;
 [[nodiscard]] std::uint16_t readBE16(std::span<const std::byte> data, std::size_t offset = 0);
 
@@ -22,7 +21,6 @@ namespace Utils {
 [[nodiscard]] std::uint32_t readUInt24BE(const std::byte *ptr) noexcept;
 [[nodiscard]] std::uint32_t readUInt24BE(std::span<const std::byte> data, std::size_t offset = 0);
 
-// Endian Little-Endian Reads
 [[nodiscard]] std::uint16_t readLE16(const std::byte *ptr) noexcept;
 [[nodiscard]] std::uint16_t readLE16(std::span<const std::byte> data, std::size_t offset = 0);
 
@@ -35,12 +33,10 @@ namespace Utils {
 [[nodiscard]] std::uint32_t readUInt24LE(const std::byte *ptr) noexcept;
 [[nodiscard]] std::uint32_t readUInt24LE(std::span<const std::byte> data, std::size_t offset = 0);
 
-// Parameterized Endian Reads
 [[nodiscard]] std::uint16_t readU16(const std::byte *ptr, bool big_endian) noexcept;
 [[nodiscard]] std::uint32_t readU32(const std::byte *ptr, bool big_endian) noexcept;
 [[nodiscard]] std::uint64_t readU64(const std::byte *ptr, bool big_endian) noexcept;
 
-// String & Path Utilities
 [[nodiscard]] std::string lowerAscii(std::string_view value);
 [[nodiscard]] std::u16string readUtf16LeString(const std::byte *ptr, std::size_t max_bytes);
 [[nodiscard]] std::u16string readNullTerminatedUtf16Le(const std::byte *ptr,
@@ -49,4 +45,4 @@ namespace Utils {
 [[nodiscard]] std::filesystem::path safeJoin(const std::filesystem::path &parent,
                                              std::string_view child);
 
-} // namespace Utils
+} 

@@ -7,7 +7,6 @@ import org.kde.kirigami as Kirigami
 Item {
     id: root
 
-    // Output properties for parent/controller binding
     property alias cpuKey: cpuKeyField.text
     property alias keyvaultPath: kvPathField.text
     property alias cfLdv: cfLdvSpinBox.value
@@ -18,10 +17,8 @@ Item {
     property var activePatches: []
     property var advancedOptions: ({})
 
-    // Signal emitted when user clicks "Build Image"
     signal buildRequested(var config)
 
-    // Helper to generate a random 32-character hex CPU Key
     function generateCpuKey() {
         var chars = "0123456789ABCDEF";
         var key = "";
@@ -31,7 +28,6 @@ Item {
         cpuKeyField.text = key;
     }
 
-    //  Keyvault File Dialog
     FileDialog {
         id: kvFileDialog
         title: qsTr("Select Keyvault File")
@@ -41,7 +37,6 @@ Item {
         }
     }
 
-    //  Patches Dialog
     QQC2.Dialog {
         id: patchesDialog
         title: qsTr("Configure Patches")
@@ -112,7 +107,6 @@ Item {
         }
     }
 
-    //  Advanced Options Dialog
     QQC2.Dialog {
         id: optionsDialog
         title: qsTr("Advanced xeBuild Options")
@@ -172,7 +166,6 @@ Item {
         }
     }
 
-    //  Main Layout
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Kirigami.Units.largeSpacing
@@ -181,7 +174,6 @@ Item {
         Kirigami.FormLayout {
             Layout.fillWidth: true
 
-            // Row 1: CPU Key
             RowLayout {
                 Kirigami.FormData.label: qsTr("CPU Key:")
                 Layout.fillWidth: true
@@ -202,7 +194,6 @@ Item {
                 }
             }
 
-            // Row 2: Keyvault
             RowLayout {
                 Kirigami.FormData.label: qsTr("Keyvault:")
                 Layout.fillWidth: true
@@ -228,7 +219,6 @@ Item {
                 }
             }
 
-            // Row 3: CF LDV (Range 0 to 80)
             QQC2.SpinBox {
                 id: cfLdvSpinBox
                 Kirigami.FormData.label: qsTr("CF LDV:")
@@ -238,12 +228,9 @@ Item {
                 editable: true
             }
 
-            // Separator
             Kirigami.Separator {
                 Layout.fillWidth: true
             }
-
-            // NAND Configuration Dropdowns
             QQC2.ComboBox {
                 id: versionCombo
                 Kirigami.FormData.label: qsTr("Version:")
@@ -292,7 +279,6 @@ Item {
                 }
             }
 
-            // Row with Patches and Options Buttons
             RowLayout {
                 Kirigami.FormData.label: qsTr("Patches & Options:")
                 Layout.fillWidth: true
@@ -328,7 +314,6 @@ Item {
             Layout.fillHeight: true
         }
 
-        // Build Image Button
         QQC2.Button {
             id: buildButton
             text: qsTr("Build Image")

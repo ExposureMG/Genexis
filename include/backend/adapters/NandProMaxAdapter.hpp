@@ -14,7 +14,7 @@ public:
     return "NandProMax";
   }
 
-  // IFlashService implementation
+  
   std::expected<FlashInfo, std::string>
   getFlashInfo(const FlashDeviceConfig &config = {}) override;
 
@@ -33,7 +33,7 @@ public:
   eraseNand(uint32_t startBlock, uint32_t blockCount,
             const FlashDeviceConfig &config = {}) override;
 
-  // IJtagService implementation
+  
   std::expected<std::vector<uint32_t>, std::string>
   scanChain(const JtagDeviceConfig &config = {}) override;
 
@@ -43,4 +43,4 @@ public:
             JtagProgressCallback progressCb = nullptr) override;
 };
 
-} // namespace gxapi::backend
+} 

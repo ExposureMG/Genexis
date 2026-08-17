@@ -6,23 +6,17 @@ import org.kde.kirigami as Kirigami
 Item {
     id: root
 
-    // Output properties for parent/controller binding
     property alias buildType: buildTypeCombo.currentText
 
-    // NAND Image / Donor specific properties
     property alias version: versionCombo.currentText
     property alias imageType: imageTypeCombo.currentText
     property alias consoleModel: consoleCombo.currentText
     property alias smcFile: smcCombo.currentText
-
-    // XeLL Image specific properties
     property alias xellHack: xellHackCombo.currentText
     property alias xellImage: xellImageCombo.currentText
 
-    // Selected patches list
     property var activePatches: []
 
-    // Advanced options property object
     property var advancedOptions: ({
             "cpuKey": "",
             "kvPath": "",
@@ -30,13 +24,10 @@ Item {
             "customArgs": ""
         })
 
-    // Signal emitted when user clicks "Build Image"
     signal buildRequested(var config)
 
-    // Helper property to check current build type mode
     readonly property bool isXeLL: buildTypeCombo.currentText === qsTr("XeLL Image")
 
-    //  Patches Dialog
     QQC2.Dialog {
         id: patchesDialog
         title: qsTr("Configure Patches")
@@ -107,7 +98,6 @@ Item {
         }
     }
 
-    //  Advanced Options Dialog
     QQC2.Dialog {
         id: optionsDialog
         title: qsTr("Advanced Image Options")
@@ -137,7 +127,6 @@ Item {
                 columnSpacing: Kirigami.Units.largeSpacing
                 width: optionsDialog.width - optionsDialog.padding * 2
 
-                // CPU Key
                 QQC2.Label {
                     text: qsTr("CPU Key:")
                     font.bold: true
@@ -153,7 +142,6 @@ Item {
                     onTextChanged: optionsDialog.tempCpuKey = text
                 }
 
-                // Keyvault File Path
                 QQC2.Label {
                     text: qsTr("Keyvault (KV):")
                     font.bold: true
@@ -168,7 +156,6 @@ Item {
                     onTextChanged: optionsDialog.tempKvPath = text
                 }
 
-                // SMC File Path
                 QQC2.Label {
                     text: qsTr("SMC File:")
                     font.bold: true
@@ -183,7 +170,6 @@ Item {
                     onTextChanged: optionsDialog.tempSmcPath = text
                 }
 
-                // Custom Arguments / Parameters
                 QQC2.Label {
                     text: qsTr("Custom Flags:")
                     font.bold: true
@@ -226,7 +212,6 @@ Item {
         }
     }
 
-    //  Main Layout
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Kirigami.Units.largeSpacing
@@ -235,7 +220,6 @@ Item {
         Kirigami.FormLayout {
             Layout.fillWidth: true
 
-            // Dropdown 1: Build Type
             QQC2.ComboBox {
                 id: buildTypeCombo
                 Kirigami.FormData.label: qsTr("Build Type:")
@@ -243,7 +227,6 @@ Item {
                 model: [qsTr("NAND Image"), qsTr("XeLL Image"), qsTr("Donor")]
             }
 
-            // XeLL Image Mode Controls
             QQC2.ComboBox {
                 id: xellHackCombo
                 Kirigami.FormData.label: qsTr("Hack:")
@@ -270,7 +253,6 @@ Item {
                 }
             }
 
-            // NAND Image / Donor Mode Controls
             QQC2.ComboBox {
                 id: versionCombo
                 Kirigami.FormData.label: qsTr("Version:")
@@ -323,7 +305,6 @@ Item {
                 }
             }
 
-            // Row with Patches and Options Buttons on the same row
             RowLayout {
                 Kirigami.FormData.label: qsTr("Patches & Options:")
                 Layout.fillWidth: true
@@ -359,7 +340,6 @@ Item {
             Layout.fillHeight: true
         }
 
-        // Build Image Button
         QQC2.Button {
             id: buildButton
             text: qsTr("Build Image")

@@ -23,21 +23,21 @@ public:
 
   void initialize();
 
-  // Hardware-mapped service lookup:
-  // - FTDI SPI / eMMC -> FTDI2SPI
-  // - FTDI SVF / XSVF -> xsvftool
-  // - PicoFlasher / LPC / Nand-X / DemoN -> NandProMax
-  // - Network / UpdServer -> UpdClient
+  
+  
+  
+  
+  
   IFlashService &flashForHardware(const std::string &hardwareName);
   IJtagService &jtagForHardware(const std::string &hardwareName);
 
-  // Direct service access
+  
   IFlashService &flash(const std::string &name = "");
   IJtagService &jtag(const std::string &name = "");
   IBuilderService &builder(const std::string &name = "");
   INetworkService &network();
 
-  // Available backend lists for UI / Settings
+  
   [[nodiscard]] std::vector<std::string> getAvailableFlashBackends() const;
   [[nodiscard]] std::vector<std::string> getAvailableJtagBackends() const;
   [[nodiscard]] std::vector<std::string> getAvailableBuilderBackends() const;
@@ -56,4 +56,4 @@ private:
   std::shared_ptr<GxBuild3Adapter> m_gxBuild3;
 };
 
-} // namespace gxapi::backend
+} 

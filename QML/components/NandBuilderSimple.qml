@@ -6,17 +6,14 @@ import org.kde.kirigami as Kirigami
 Item {
     id: root
 
-    // Output properties for parent/controller binding
     property alias buildType: buildTypeCombo.currentText
     property alias buildVersion: buildVersionCombo.currentText
     property alias imageType: imageTypeCombo.currentText
     property alias hackVersion: hackVersionCombo.currentText
     property var activePatches: []
 
-    // Signal emitted when user clicks "Build Image"
     signal buildRequested(var config)
 
-    //  Patches Dialog
     QQC2.Dialog {
         id: patchesDialog
         title: qsTr("Configure Patches")
@@ -87,7 +84,6 @@ Item {
         }
     }
 
-    //  Main Layout
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Kirigami.Units.largeSpacing
@@ -96,7 +92,6 @@ Item {
         Kirigami.FormLayout {
             Layout.fillWidth: true
 
-            // Dropdown 1: Build Type
             QQC2.ComboBox {
                 id: buildTypeCombo
                 Kirigami.FormData.label: qsTr("Build Type:")
@@ -104,7 +99,6 @@ Item {
                 model: [qsTr("NAND Image"), qsTr("XeLL Image")]
             }
 
-            // --- NAND Image Controls ---
             QQC2.ComboBox {
                 id: buildVersionCombo
                 Kirigami.FormData.label: qsTr("Build Version:")
@@ -144,7 +138,6 @@ Item {
                 }
             }
 
-            // --- XeLL Image Controls ---
             QQC2.ComboBox {
                 id: xellHackCombo
                 Kirigami.FormData.label: qsTr("Hack:")
@@ -171,7 +164,6 @@ Item {
                 }
             }
 
-            // Patches Button
             RowLayout {
                 Kirigami.FormData.label: qsTr("Patches:")
                 Layout.fillWidth: true
@@ -199,7 +191,6 @@ Item {
             Layout.fillHeight: true
         }
 
-        // Build Image Button
         QQC2.Button {
             id: buildButton
             text: qsTr("Build Image")

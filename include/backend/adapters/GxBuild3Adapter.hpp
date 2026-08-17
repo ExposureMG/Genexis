@@ -45,4 +45,4 @@ private:
   std::filesystem::path getSmcDataPath() const;
 };
 
-} // namespace gxapi::backend
+} 

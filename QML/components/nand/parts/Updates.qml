@@ -32,13 +32,13 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
         }
 
-        // Side-by-side vertical columns for Patchslot 0 and Patchslot 1
+        
         RowLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
             spacing: Kirigami.Units.largeSpacing * 2
 
-            // Patchslot 0 Vertical Column
+            
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignTop
@@ -144,7 +144,7 @@ Kirigami.ScrollablePage {
                 Layout.fillHeight: true
             }
 
-            // Patchslot 1 Vertical Column
+            
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignTop

@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
   }
 
-  // Execute Genexis startup tasks (AppData, Settings, Plugins, Updates)
+  
   StartupManager::instance().runStartupSequence();
 
   QQmlApplicationEngine engine;

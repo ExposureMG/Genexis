@@ -39,7 +39,7 @@ constexpr std::string_view ParseErrorString(ParseError e) {
 struct Entry {
   std::string key;
   std::string value;
-  std::string hash; // may be empty
+  std::string hash; 
   uint8_t chain{0};
 };
 
@@ -77,4 +77,4 @@ SaveFile(const Document &doc, const std::filesystem::path &path,
 
 [[nodiscard]] std::string_view Trim(std::string_view sv);
 
-} // namespace Ini
+} 

@@ -8,7 +8,6 @@ Kirigami.OverlaySheet {
 
     title: qsTr("Keyvault Details")
 
-    // Properties for data binding
     property string consoleModel: qsTr("Trinity")
     property string kvType: qsTr("Type 2 (Slim)")
     property string consoleId: "028045612398"
@@ -37,7 +36,6 @@ Kirigami.OverlaySheet {
         copyToolTip.open();
     }
 
-    // Hidden text field used to invoke standard QML clipboard copy
     QQC2.TextField {
         id: clipboardHelper
         visible: false
@@ -47,12 +45,9 @@ Kirigami.OverlaySheet {
         spacing: Kirigami.Units.largeSpacing
         implicitWidth: Math.min(root.parent ? root.parent.width * 0.9 : 600, Kirigami.Units.gridUnit * 35)
 
-        // Header Status Badges
         RowLayout {
             Layout.fillWidth: true
             spacing: Kirigami.Units.smallSpacing
-
-            // Hashed Status Badge
             Rectangle {
                 implicitWidth: hashedLabel.implicitWidth + Kirigami.Units.largeSpacing
                 implicitHeight: Kirigami.Units.gridUnit * 1.5
@@ -79,7 +74,6 @@ Kirigami.OverlaySheet {
                 }
             }
 
-            // FCRT Status Badge
             Rectangle {
                 implicitWidth: fcrtLabel.implicitWidth + Kirigami.Units.largeSpacing
                 implicitHeight: Kirigami.Units.gridUnit * 1.5
@@ -115,11 +109,9 @@ Kirigami.OverlaySheet {
             Layout.fillWidth: true
         }
 
-        // Details Form Layout
         Kirigami.FormLayout {
             Layout.fillWidth: true
 
-            // 1. Console Model
             QQC2.TextField {
                 Kirigami.FormData.label: qsTr("Console Model:")
                 text: root.consoleModel
@@ -127,7 +119,6 @@ Kirigami.OverlaySheet {
                 Layout.fillWidth: true
             }
 
-            // 2. Keyvault Type
             QQC2.TextField {
                 Kirigami.FormData.label: qsTr("Keyvault Type:")
                 text: root.kvType
@@ -135,7 +126,6 @@ Kirigami.OverlaySheet {
                 Layout.fillWidth: true
             }
 
-            // 3. Serial Number
             RowLayout {
                 Kirigami.FormData.label: qsTr("Serial Number:")
                 Layout.fillWidth: true
@@ -158,7 +148,6 @@ Kirigami.OverlaySheet {
                 }
             }
 
-            // 4. Console ID
             RowLayout {
                 Kirigami.FormData.label: qsTr("Console ID:")
                 Layout.fillWidth: true
@@ -181,7 +170,6 @@ Kirigami.OverlaySheet {
                 }
             }
 
-            // 5. DVD Key
             RowLayout {
                 Kirigami.FormData.label: qsTr("DVD Key:")
                 Layout.fillWidth: true
@@ -204,7 +192,6 @@ Kirigami.OverlaySheet {
                 }
             }
 
-            // 6. OSIG String
             RowLayout {
                 Kirigami.FormData.label: qsTr("OSIG String:")
                 Layout.fillWidth: true
@@ -227,7 +214,6 @@ Kirigami.OverlaySheet {
                 }
             }
 
-            // 7. Game Region
             QQC2.TextField {
                 Kirigami.FormData.label: qsTr("Game Region:")
                 text: root.region
@@ -235,7 +221,6 @@ Kirigami.OverlaySheet {
                 Layout.fillWidth: true
             }
 
-            // 8. Manufacturing Date
             QQC2.TextField {
                 Kirigami.FormData.label: qsTr("MFR Date:")
                 text: root.mfrDate
@@ -244,7 +229,6 @@ Kirigami.OverlaySheet {
             }
         }
 
-        // Close Action
         RowLayout {
             Layout.fillWidth: true
             Layout.topMargin: Kirigami.Units.largeSpacing

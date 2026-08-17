@@ -192,7 +192,7 @@ void Flasher::detectHardware(const QString &filePath) {
         resultStr = QStringLiteral("JTAG not supported by ") +
                     QString::fromStdString(devProfile->displayName);
       } else {
-        // Detect JTAG chain (xsvftool for FTDI, NandProMax for Pico/LPC/DemoN)
+        
         gxapi::backend::JtagDeviceConfig jConfig;
         auto scanRes =
             BackendManager::instance().jtagForHardware(hwTarget).scanChain(
@@ -220,8 +220,8 @@ void Flasher::detectHardware(const QString &filePath) {
         resultStr = QStringLiteral("Flash not supported by ") +
                     QString::fromStdString(devProfile->displayName);
       } else {
-        // Detect Flash Config (FTDI2SPI for FTDI, NandProMax for
-        // Pico/LPC/DemoN, UpdClient for Network)
+        
+        
         gxapi::backend::FlashDeviceConfig fConfig;
         if (m_isUpdClientSelected) {
           fConfig.ipAddress = m_targetIp.toStdString();
