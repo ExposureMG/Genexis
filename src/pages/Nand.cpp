@@ -1,10 +1,10 @@
 #include "pages/Nand.hpp"
-#include "FlashImage.hpp"
+#include "nand/FlashImage.hpp"
 #include "StartupManager.hpp"
-#include "bootloaders/2bl.hpp"
-#include "bootloaders/6bl.hpp"
-#include "bootloaders/Keyvault.hpp"
-#include "bootloaders/SMC.hpp"
+#include "nand/bootloaders/2bl.hpp"
+#include "nand/bootloaders/6bl.hpp"
+#include "nand/objects/Keyvault.hpp"
+#include "nand/objects/SMC.hpp"
 
 #include <QDateTime>
 #include <QDebug>
@@ -242,124 +242,149 @@ QString Nand::detectCpuKey(const QString &filePath) {
 }
 
 void Nand::parseNandData(const std::vector<uint8_t> &data) {
-  nand_results_t results = read(data);
-  if (!results.valid) {
+  auto imageOpt = gxbuild3::NAND::FlashImage::read(data);
+  if (!imageOpt || !imageOpt->parse()) {
     qDebug() << "[Nand] Invalid NAND image format or header.";
     return;
   }
+  auto &image = *imageOpt;
 
   m_isNandLoaded = true;
   Q_EMIT nandStateChanged();
 
-  
   double sizeMb = static_cast<double>(data.size()) / (1024.0 * 1024.0);
   m_imageSize = QString::number(sizeMb, 'f', 0) + QStringLiteral(" MB");
 
-  
-  if (results.cbb) {
-    m_cbAVersion = QString::number(results.cb_or_a.version);
-    m_cbBVersion = QString::number(results.cbb->version);
+  m_headerMagic = QStringLiteral("0x") +
+                  QString::number(image.header.magic, 16).toUpper();
+  m_headerVersion = QString::number(image.header.version);
+  m_patchSlots = QString::number(image.header.patch_slots);
+  m_smcConfigOffset = QStringLiteral("0x") +
+                      QString::number(image.header.smc_config_offset, 16).toUpper();
+
+  if (image.cb_section.cb_B.has_value() && !image.cb_section.cb_B->data.empty()) {
+    m_cbAVersion = QString::number(image.cb_section.cb_or_A.header.header.version);
+    m_cbBVersion = QString::number(image.cb_section.cb_B->header.header.version);
     m_cbVersion = QStringLiteral("%1 / %2").arg(m_cbAVersion, m_cbBVersion);
-    if (results.cbx) {
-      m_cbXVersion = QString::number(results.cbx->version);
+    if (image.cb_section.cb_x.has_value()) {
+      m_cbXVersion = QString::number(image.cb_section.cb_x->header.header.version);
     }
-  } else if (results.cb_or_a.version != 0) {
-    m_cbVersion = QString::number(results.cb_or_a.version);
+  } else if (image.cb_section.cb_or_A.header.header.version != 0) {
+    m_cbVersion = QString::number(image.cb_section.cb_or_A.header.header.version);
     m_cbAVersion = m_cbVersion;
   }
 
-  m_cbSize = QString::number(results.cb_or_a.size);
+  m_cbSize = QString::number(image.cb_section.cb_or_A.header.header.size);
   m_cbMagic = QStringLiteral("0x") +
-              QString::number(results.cb_or_a.magic, 16).toUpper();
+              QString::number(image.cb_section.cb_or_A.header.header.magic, 16).toUpper();
 
-  if (results.sc)
-    m_scVersion = QString::number(results.sc->version);
-  if (results.cd)
-    m_cdVersion = QString::number(results.cd->version);
-  if (results.ce)
-    m_ceVersion = QString::number(results.ce->version);
+  if (image.cb_section.sc.has_value())
+    m_scVersion = QString::number(image.cb_section.sc->header.header.version);
+  if (!image.kernel_section.cd.data.empty())
+    m_cdVersion = QString::number(image.kernel_section.cd.header.header.version);
+  if (image.kernel_section.ce.has_value())
+    m_ceVersion = QString::number(image.kernel_section.ce->header.header.version);
 
-  if (results.cf0)
-    m_cf0Version = QString::number(results.cf0->version);
-  if (results.cg0)
-    m_cg0Version = QString::number(results.cg0->version);
-  if (results.cf1)
-    m_cf1Version = QString::number(results.cf1->version);
-  if (results.cg1)
-    m_cg1Version = QString::number(results.cg1->version);
+  if (image.system_update_0.cf.has_value())
+    m_cf0Version = QString::number(image.system_update_0.cf->header.header.version);
+  if (image.system_update_0.cg.has_value())
+    m_cg0Version = QString::number(image.system_update_0.cg->header.header.version);
+  if (image.system_update_1.cf.has_value())
+    m_cf1Version = QString::number(image.system_update_1.cf->header.header.version);
+  if (image.system_update_1.cg.has_value())
+    m_cg1Version = QString::number(image.system_update_1.cg->header.header.version);
 
-  
-  if (results.cb_or_a.offset != 0 &&
-      results.cb_or_a.offset + results.cb_or_a.size <= data.size()) {
-    std::vector<uint8_t> cbBytes(data.begin() + results.cb_or_a.offset,
-                                 data.begin() + results.cb_or_a.offset +
-                                     results.cb_or_a.size);
+  if (!image.cb_section.cb_or_A.data.empty()) {
     try {
-      BootloaderCb cbA = BootloaderCb::parse(cbBytes);
-      cbA.decrypt(key_1bl);
-      cbA.populate_metadata();
-      if (cbA.metadata && cbA.metadata->lockdown_value) {
-        m_cbALdv = QString::number(*cbA.metadata->lockdown_value);
-        m_cbLdv = m_cbALdv;
+      BootloaderCb cbA = image.cb_section.cb_or_A;
+      if (!cbA.is_decrypted()) {
+        cbA.decrypt(key_1bl);
       }
-      if (cbA.metadata && cbA.metadata->pairing_data) {
-        auto p = *cbA.metadata->pairing_data;
-        m_cbAPairing = QStringLiteral("0x") + bytesToHex(p.data(), 3).toUpper();
+      cbA.populate_metadata();
+      if (cbA.perbox.has_value()) {
+        m_cbALdv = QString::number(cbA.perbox->lockdown_value);
+        m_cbLdv = m_cbALdv;
+        m_cbAPairing = QStringLiteral("0x") + bytesToHex(cbA.perbox->pairing_data, 3).toUpper();
         m_cbPairing = m_cbAPairing;
       }
     } catch (...) {
     }
   }
 
-  
-  if (results.cf0 && results.cf0->offset + results.cf0->size <= data.size()) {
-    std::vector<uint8_t> cfBytes(data.begin() + results.cf0->offset,
-                                 data.begin() + results.cf0->offset +
-                                     results.cf0->size);
+  if (image.system_update_0.cf.has_value()) {
     try {
-      BootloaderCf cf0 = BootloaderCf::parse(cfBytes);
-      m_cf0Ldv = QString::number(cf0.header.lockdown_value);
-      m_cf0Pairing = QStringLiteral("0x") +
-                     bytesToHex(cf0.header.pairing_data, 3).toUpper();
+      BootloaderCf cf0 = *image.system_update_0.cf;
+      if (!cf0.is_decrypted()) {
+        cf0.decrypt(key_1bl);
+      }
+      if (cf0.perbox.has_value()) {
+        m_cf0Ldv = QString::number(cf0.perbox->lockdown_value);
+        m_cf0Pairing = QStringLiteral("0x") +
+                       bytesToHex(cf0.perbox->pairing_data, 3).toUpper();
+      }
     } catch (...) {
     }
   }
 
-  if (results.cf1 && results.cf1->offset + results.cf1->size <= data.size()) {
-    std::vector<uint8_t> cfBytes(data.begin() + results.cf1->offset,
-                                 data.begin() + results.cf1->offset +
-                                     results.cf1->size);
+  if (image.system_update_1.cf.has_value()) {
     try {
-      BootloaderCf cf1 = BootloaderCf::parse(cfBytes);
-      m_cf1Ldv = QString::number(cf1.header.lockdown_value);
-      m_cf1Pairing = QStringLiteral("0x") +
-                     bytesToHex(cf1.header.pairing_data, 3).toUpper();
+      BootloaderCf cf1 = *image.system_update_1.cf;
+      if (!cf1.is_decrypted()) {
+        cf1.decrypt(key_1bl);
+      }
+      if (cf1.perbox.has_value()) {
+        m_cf1Ldv = QString::number(cf1.perbox->lockdown_value);
+        m_cf1Pairing = QStringLiteral("0x") +
+                       bytesToHex(cf1.perbox->pairing_data, 3).toUpper();
+      }
     } catch (...) {
     }
-  };
-  m_patchSlots = QString::number(results.patch_slots);
-  m_smcConfigOffset = QStringLiteral("0x") +
-                      QString::number(results.smc_config_offset, 16).toUpper();
-  m_smcSize = QString::number(results.smc_size) + QStringLiteral(" bytes");
+  }
 
-  
-  if (results.smc_offset != 0 && results.smc_size != 0 &&
-      (results.smc_offset + results.smc_size) <= data.size()) {
-    std::vector<uint8_t> rawSmc(data.begin() + results.smc_offset,
-                                data.begin() + results.smc_offset +
-                                    results.smc_size);
-    std::vector<uint8_t> decSmc = rawSmc;
-    if (smc_is_encrypted(rawSmc)) {
-      decSmc = smc_decrypt(rawSmc);
+  if (image.smc.has_value() && !image.smc->data.empty()) {
+    m_smcSize = QString::number(image.smc->data.size()) + QStringLiteral(" bytes");
+
+    if (!image.smc->version.empty()) {
+      m_smcVersion = QString::fromStdString(image.smc->version);
+    } else {
+      std::vector<uint8_t> decSmc = image.smc->data;
+      if (gxbuild3::NAND::smc_is_encrypted(decSmc)) {
+        decSmc = gxbuild3::NAND::smc_decrypt(decSmc);
+      }
+      if (decSmc.size() >= 0x102) {
+        uint8_t b0 = decSmc[0x100];
+        uint8_t b1 = decSmc[0x101];
+        uint8_t major = (b0 >> 4) & 0xF;
+        uint8_t minor = b0 & 0xF;
+        m_smcVersion = QStringLiteral("%1.%2").arg(major).arg(minor);
+        if (b1 != 0) {
+          m_smcVersion += QStringLiteral(".%1").arg(b1);
+        }
+      }
     }
 
-    SmcType type = smc_get_type(decSmc);
-    m_smcType = QString::fromStdString(std::string(smc_type_name(type)));
+    auto variantName = gxbuild3::NAND::smc_type_name(image.smc->variant);
+    auto mbName = gxbuild3::NAND::smc_motherboard_name(image.smc->motherboard);
+    if (variantName != "Unknown" && mbName != "Unknown") {
+      m_smcType = QStringLiteral("%1 (%2)")
+                      .arg(QString::fromStdString(std::string(variantName)),
+                           QString::fromStdString(std::string(mbName)));
+    } else if (variantName != "Unknown") {
+      m_smcType = QString::fromStdString(std::string(variantName));
+    } else if (mbName != "Unknown") {
+      m_smcType = QString::fromStdString(std::string(mbName));
+    } else {
+      std::vector<uint8_t> decSmc = image.smc->data;
+      if (gxbuild3::NAND::smc_is_encrypted(decSmc)) {
+        decSmc = gxbuild3::NAND::smc_decrypt(decSmc);
+      }
+      gxbuild3::NAND::SmcType type = gxbuild3::NAND::smc_get_type(decSmc);
+      m_smcType = QString::fromStdString(std::string(gxbuild3::NAND::smc_type_name(type)));
+    }
 
-    if (decSmc.size() >= 0x10) {
-      uint8_t vMajor = decSmc[0x01];
-      uint8_t vMinor = decSmc[0x02];
-      m_smcVersion = QStringLiteral("%1.%2").arg(vMajor).arg(vMinor);
+    if (image.smc->motherboard != gxbuild3::NAND::SmcMotherboard::Unknown) {
+      m_consoleTarget = QString::fromStdString(
+          std::string(gxbuild3::NAND::smc_motherboard_name(image.smc->motherboard)));
     }
 
     m_isSmcDecrypted = true;
@@ -370,10 +395,9 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
   qDebug() << "[Nand] NAND metadata successfully loaded. CB Version:"
            << m_cbVersion << "SMC Type:" << m_smcType;
 
-  
   m_components.clear();
 
-  if (results.smc_offset != 0) {
+  if (image.smc.has_value()) {
     QVariantMap smcMap;
     smcMap[QStringLiteral("cardType")] = QStringLiteral("smc");
     smcMap[QStringLiteral("title")] = QStringLiteral("SMC Firmware");
@@ -383,7 +407,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     m_components.append(smcMap);
   }
 
-  if (results.cbb) {
+  if (image.cb_section.cb_B.has_value() && !image.cb_section.cb_B->data.empty()) {
     QVariantMap cbAMap;
     cbAMap[QStringLiteral("cardType")] = QStringLiteral("cb_a");
     cbAMap[QStringLiteral("title")] = QStringLiteral("CB_A (2BL)");
@@ -396,14 +420,14 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     cbBMap[QStringLiteral("versionStr")] = m_cbBVersion;
     m_components.append(cbBMap);
 
-    if (results.cbx) {
+    if (image.cb_section.cb_x.has_value()) {
       QVariantMap cbXMap;
       cbXMap[QStringLiteral("cardType")] = QStringLiteral("cb_x");
       cbXMap[QStringLiteral("title")] = QStringLiteral("CB_X (RGH3)");
       cbXMap[QStringLiteral("versionStr")] = m_cbXVersion;
       m_components.append(cbXMap);
     }
-  } else if (results.cb_or_a.version != 0) {
+  } else if (image.cb_section.cb_or_A.header.header.version != 0) {
     QVariantMap cbMap;
     cbMap[QStringLiteral("cardType")] = QStringLiteral("cb");
     cbMap[QStringLiteral("title")] = QStringLiteral("CB (2BL)");
@@ -413,7 +437,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     m_components.append(cbMap);
   }
 
-  if (results.cd) {
+  if (!image.kernel_section.cd.data.empty()) {
     QVariantMap cdMap;
     cdMap[QStringLiteral("cardType")] = QStringLiteral("cd");
     cdMap[QStringLiteral("title")] = QStringLiteral("CD (4BL)");
@@ -421,7 +445,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     m_components.append(cdMap);
   }
 
-  if (results.ce) {
+  if (image.kernel_section.ce.has_value()) {
     QVariantMap ceMap;
     ceMap[QStringLiteral("cardType")] = QStringLiteral("ce");
     ceMap[QStringLiteral("title")] = QStringLiteral("CE (Kernel)");
@@ -429,15 +453,18 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     m_components.append(ceMap);
   }
 
-  if (results.payload_indicator != 0) {
+  if (image.payloads.xell.has_value()) {
     QVariantMap xellMap;
     xellMap[QStringLiteral("cardType")] = QStringLiteral("xell");
     xellMap[QStringLiteral("title")] = QStringLiteral("XeLL Payload");
-    xellMap[QStringLiteral("versionStr")] = QStringLiteral("0.99");
+    xellMap[QStringLiteral("versionStr")] =
+        QString::fromStdString(image.payloads.xell->metadata.version.empty()
+                                   ? "0.99"
+                                   : image.payloads.xell->metadata.version);
     m_components.append(xellMap);
   }
 
-  if (results.cf0) {
+  if (image.system_update_0.cf.has_value()) {
     QVariantMap patch0Map;
     patch0Map[QStringLiteral("cardType")] = QStringLiteral("patch0");
     patch0Map[QStringLiteral("title")] = QStringLiteral("Patchslot 0");
@@ -445,7 +472,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     m_components.append(patch0Map);
   }
 
-  if (results.cf1) {
+  if (image.system_update_1.cf.has_value()) {
     QVariantMap patch1Map;
     patch1Map[QStringLiteral("cardType")] = QStringLiteral("patch1");
     patch1Map[QStringLiteral("title")] = QStringLiteral("Patchslot 1");
@@ -453,7 +480,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     m_components.append(patch1Map);
   }
 
-  if (results.kv_offset != 0) {
+  if (image.keyvault.has_value()) {
     QVariantMap kvMap;
     kvMap[QStringLiteral("cardType")] = QStringLiteral("keyvault");
     kvMap[QStringLiteral("title")] = QStringLiteral("Keyvault");
@@ -476,7 +503,7 @@ void Nand::setCpuKey(const QString &cpuKey) {
   }
 
   std::vector<uint8_t> keyBytes = hexToBytes(m_cpuKey);
-  if (!cpukey_valid(keyBytes)) {
+  if (!gxbuild3::NAND::cpukey_valid(keyBytes)) {
     qDebug() << "[Nand] Invalid CPU key checksum.";
     m_isCpuKeyLoaded = false;
     Q_EMIT cpuKeyStateChanged();
@@ -487,23 +514,27 @@ void Nand::setCpuKey(const QString &cpuKey) {
     return;
   }
 
-  FlashImage image = FlashImage::parse(m_rawNandData);
-  if (image.keyvault) {
-    parseKeyvault(keyBytes, *image.keyvault);
+  auto imageOpt = gxbuild3::NAND::FlashImage::read(m_rawNandData);
+  if (imageOpt && imageOpt->parse() && imageOpt->keyvault.has_value()) {
+    const auto &rawKv = imageOpt->keyvault->raw_data.empty()
+                            ? imageOpt->keyvault->serialize()
+                            : imageOpt->keyvault->raw_data;
+    parseKeyvault(keyBytes, rawKv);
   }
 }
 
 void Nand::parseKeyvault(const std::vector<uint8_t> &cpuKeyBytes,
                          const std::vector<uint8_t> &rawKv) {
-  std::vector<uint8_t> decKv = keyvault_decrypt(cpuKeyBytes, rawKv);
-  if (decKv.size() < sizeof(XE_KEYVAULT_DATA)) {
+  std::vector<uint8_t> decKv = gxbuild3::NAND::keyvault_decrypt(cpuKeyBytes, rawKv);
+  if (decKv.size() < sizeof(gxbuild3::NAND::XE_KEYVAULT_DATA)) {
     qDebug() << "[Nand] Keyvault decryption failed (buffer size mismatch).";
     m_isCpuKeyLoaded = false;
     Q_EMIT cpuKeyStateChanged();
     return;
   }
 
-  const auto *kv = reinterpret_cast<const XE_KEYVAULT_DATA *>(decKv.data());
+  const auto *kv =
+      reinterpret_cast<const gxbuild3::NAND::XE_KEYVAULT_DATA *>(decKv.data());
 
   char serialBuf[13] = {0};
   std::memcpy(serialBuf, kv->sz14ConsoleSerialNumber, 12);

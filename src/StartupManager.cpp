@@ -1,5 +1,5 @@
 #include "StartupManager.hpp"
-#include "Log.hpp"
+#include "utils/Log.hpp"
 #include "backend/BackendManager.hpp"
 
 #include <QDebug>

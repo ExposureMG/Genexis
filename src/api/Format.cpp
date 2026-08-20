@@ -11,9 +11,13 @@
 #include "vendor/platforms/UNIX.hpp"
 #endif
 
-#include <FlashImage.hpp>
-#include <bootloaders/Common.hpp>
-#include <bootloaders/FlashFileSystem.hpp>
+#include "nand/FlashImage.hpp"
+#include "nand/NandTypes.hpp"
+#include "nand/bootloaders/Common.hpp"
+#include "nand/objects/FlashFileSystem.hpp"
+
+using nand_header_t = nand_header;
+using bl_header = generic_header;
 
 #include <algorithm>
 #include <array>
@@ -95,7 +99,7 @@ readWholeFile(const std::filesystem::path &path) {
   return {};
 }
 
-[[nodiscard]] std::string formatSize(std::size_t n) {
+[[maybe_unused]] [[nodiscard]] static std::string formatSize(std::size_t n) {
   if (n < 1024)
     return std::to_string(n) + " B";
   if (n < 1024 * 1024)
@@ -120,7 +124,7 @@ struct BlKind {
   bool valid;
   std::uint16_t magic;
 };
-[[nodiscard]] BlKind readBlMagic(std::span<const std::byte> data) {
+[[maybe_unused]] [[nodiscard]] static BlKind readBlMagic(std::span<const std::byte> data) {
   if (data.size() < 2)
     return {false, 0};
   auto m = magic16(data, 0);
@@ -128,8 +132,6 @@ struct BlKind {
 }
 
 [[nodiscard]] std::string blNameFromMagic(std::uint16_t m, bool devkit) {
-  
-  
   switch (m & 0x0FFF) {
   case 0x342:
     return devkit ? "SB" : "CB";
@@ -143,71 +145,58 @@ struct BlKind {
     return devkit ? "SF" : "CF";
   case 0x347:
     return devkit ? "SG" : "CG";
-  
   default:
     return "BL";
   }
 }
 
 [[nodiscard]] std::optional<FileMetadata>
-probeBootloader(std::span<const std::byte> data, std::string_view ) {
+probeBootloader(std::span<const std::byte> data, std::string_view) {
   if (data.size() < sizeof(bl_header))
     return std::nullopt;
 
   auto m = magic16(data, 0);
-  
-  
+
   bool retail_range =
-      (m >= 0x0300 && m < 0x0400) || (m >= 0x0600 && m < 0x0700);
+      (m >= 0x0300 && m < 0x0400) || (m >= 0x0600 && m < 0x0700) ||
+      (m == NANDBootloaderMagic::CB) || (m == NANDBootloaderMagic::CD) ||
+      (m == NANDBootloaderMagic::CE) || (m == NANDBootloaderMagic::CF) ||
+      (m == NANDBootloaderMagic::CG);
   if (!retail_range)
     return std::nullopt;
 
-  auto type = static_cast<bl_type>(m & 0x0FFF);
-  bool devkit = (magic16(data, 4) & 0x8000) != 0; 
-
+  bool devkit = (magic16(data, 4) & 0x8000) != 0;
   std::string name = blNameFromMagic(m, devkit);
 
-  
-  if ((m & 0x0FFF) == 0x342) {
+  if ((m & 0x0FFF) == 0x342 || m == NANDBootloaderMagic::CB) {
     name = (devkit) ? "SB" : "CB";
-    
     if (!devkit && magic16(data, 4) == 0x8000)
       name = "CB_B";
-    
   }
 
-  switch (type) {
-  case CF: {
+  if (m == NANDBootloaderMagic::CF || (m & 0x0FFF) == 0x346) {
     CfMeta meta;
     meta.bl_name = name;
-    meta.source_version = magic16(data, 2); 
-    meta.target_version = magic16(data, 6); 
+    meta.source_version = magic16(data, 2);
+    meta.target_version = magic16(data, 6);
     meta.size = data.size();
     meta.sha1_hex = sha1Hex(data);
-    
-    
     return meta;
-  }
-  case CG: {
+  } else if (m == NANDBootloaderMagic::CG || (m & 0x0FFF) == 0x347) {
     CgMeta meta;
     meta.bl_name = name;
     meta.version = magic16(data, 2);
     meta.size = data.size();
     meta.sha1_hex = sha1Hex(data);
     return meta;
-  }
-  default: {
+  } else {
     BootloaderMeta meta;
     meta.bl_name = name;
     meta.version = magic16(data, 2);
     meta.size = data.size();
     meta.sha1_hex = sha1Hex(data);
     meta.is_devkit = devkit;
-    
-    
-    
     return meta;
-  }
   }
 }
 
@@ -247,8 +236,6 @@ probeXell(std::span<const std::byte> data) {
                          "ELF"))
     return std::nullopt;
 
-  
-  constexpr const char kXeLL[] = "XeLL";
   const std::size_t kScan = std::min<std::size_t>(65536, data.size() - 4);
   bool found = false;
   std::string version;
@@ -345,10 +332,7 @@ struct FsContext::Impl {
 
   
   std::filesystem::path flashfs_nand_path;
-  std::vector<gxbuild3::bootloaders::FlashFileSystemEntry> flashfs_entries;
-
-  
-  mutable std::optional<nand_results_t> nand_results;
+  std::vector<gxbuild3::NAND::FlashFileSystemEntry> flashfs_entries;
 
   
   
@@ -540,8 +524,8 @@ FsContext::openStfsBuffer(std::span<const std::byte> data) {
 }
 
 std::optional<FsContext> FsContext::openFatx(const std::filesystem::path &image,
-                                             std::uint64_t offset,
-                                             std::uint64_t size) {
+                                             [[maybe_unused]] std::uint64_t offset,
+                                             [[maybe_unused]] std::uint64_t size) {
   FsContext ctx;
   ctx.impl_->kind = EntryKind::Fatx;
   ctx.impl_->nand_path = image;
