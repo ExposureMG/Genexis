@@ -44,8 +44,8 @@ Kirigami.ScrollablePage {
             }
 
             QQC2.TextField {
-                Kirigami.FormData.label: qsTr("2BL Version:")
-                text: typeof nandController !== "undefined" ? nandController.cbVersion : ""
+                Kirigami.FormData.label: qsTr("Block Type:")
+                text: typeof nandController !== "undefined" ? nandController.blockType : ""
                 placeholderText: qsTr("Empty")
                 readOnly: true
                 font.family: "Monospace"

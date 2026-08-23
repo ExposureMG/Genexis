@@ -66,6 +66,7 @@ void Nand::clear() {
 
   m_consoleTarget.clear();
   m_buildType.clear();
+  m_blockType.clear();
   m_imageSize.clear();
   m_headerMagic.clear();
   m_headerVersion.clear();
@@ -252,8 +253,32 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
   m_isNandLoaded = true;
   Q_EMIT nandStateChanged();
 
-  double sizeMb = static_cast<double>(data.size()) / (1024.0 * 1024.0);
-  m_imageSize = QString::number(sizeMb, 'f', 0) + QStringLiteral(" MB");
+  switch (image.flash_driver.image_size()) {
+    case gxbuild3::NAND::Driver::Smallblock:
+      m_imageSize = QStringLiteral("16MB");
+      break;
+    case gxbuild3::NAND::Driver::Bigordevkit:
+      m_imageSize = QStringLiteral("64MB");
+      break;
+    case gxbuild3::NAND::Driver::Emmcblock:
+      m_imageSize = QStringLiteral("48MB");
+      break;
+  }
+
+  switch (image.flash_driver.driver_mode()) {
+    case gxbuild3::NAND::Driver::Small:
+      m_blockType = QStringLiteral("Small Block");
+      break;
+    case gxbuild3::NAND::Driver::NewSmall:
+      m_blockType = QStringLiteral("New Small Block");
+      break;
+    case gxbuild3::NAND::Driver::Big:
+      m_blockType = QStringLiteral("Big Block");
+      break;
+    case gxbuild3::NAND::Driver::Emmc:
+      m_blockType = QStringLiteral("eMMC");
+      break;
+  }
 
   m_headerMagic = QStringLiteral("0x") +
                   QString::number(image.header.magic, 16).toUpper();
@@ -344,23 +369,15 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
   if (image.smc.has_value() && !image.smc->data.empty()) {
     m_smcSize = QString::number(image.smc->data.size()) + QStringLiteral(" bytes");
 
-    if (!image.smc->version.empty()) {
-      m_smcVersion = QString::fromStdString(image.smc->version);
-    } else {
-      std::vector<uint8_t> decSmc = image.smc->data;
-      if (gxbuild3::NAND::smc_is_encrypted(decSmc)) {
-        decSmc = gxbuild3::NAND::smc_decrypt(decSmc);
-      }
-      if (decSmc.size() >= 0x102) {
-        uint8_t b0 = decSmc[0x100];
-        uint8_t b1 = decSmc[0x101];
-        uint8_t major = (b0 >> 4) & 0xF;
-        uint8_t minor = b0 & 0xF;
-        m_smcVersion = QStringLiteral("%1.%2").arg(major).arg(minor);
-        if (b1 != 0) {
-          m_smcVersion += QStringLiteral(".%1").arg(b1);
-        }
-      }
+    std::vector<uint8_t> decSmc = image.smc->data;
+    if (gxbuild3::NAND::smc_is_encrypted(decSmc)) {
+      decSmc = gxbuild3::NAND::smc_decrypt(decSmc);
+    }
+
+    if (decSmc.size() >= 0x103) {
+      uint8_t vMajor = decSmc[0x101];
+      uint8_t vMinor = decSmc[0x102];
+      m_smcVersion = QStringLiteral("%1.%2").arg(vMajor).arg(vMinor, 2, 10, QLatin1Char('0'));
     }
 
     auto variantName = gxbuild3::NAND::smc_type_name(image.smc->variant);
@@ -374,10 +391,6 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     } else if (mbName != "Unknown") {
       m_smcType = QString::fromStdString(std::string(mbName));
     } else {
-      std::vector<uint8_t> decSmc = image.smc->data;
-      if (gxbuild3::NAND::smc_is_encrypted(decSmc)) {
-        decSmc = gxbuild3::NAND::smc_decrypt(decSmc);
-      }
       gxbuild3::NAND::SmcType type = gxbuild3::NAND::smc_get_type(decSmc);
       m_smcType = QString::fromStdString(std::string(gxbuild3::NAND::smc_type_name(type)));
     }

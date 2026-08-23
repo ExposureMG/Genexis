@@ -121,6 +121,12 @@ Kirigami.ApplicationWindow {
         globalConsoleDialog.close();
     }
 
+    function openOpenFileDialog() {
+        if (statusBar && typeof statusBar.openOpenFileDialog === "function") {
+            statusBar.openOpenFileDialog();
+        }
+    }
+
     function switchPage(url) {
         pageStack.clear();
         pageStack.push(Qt.resolvedUrl(url));

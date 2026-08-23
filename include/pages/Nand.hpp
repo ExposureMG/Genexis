@@ -21,6 +21,7 @@ class Nand : public QObject {
   
   Q_PROPERTY(QString consoleTarget READ consoleTarget NOTIFY metadataChanged)
   Q_PROPERTY(QString buildType READ buildType NOTIFY metadataChanged)
+  Q_PROPERTY(QString blockType READ blockType NOTIFY metadataChanged)
   Q_PROPERTY(QString kernelVerOrType READ kernelVerOrType NOTIFY metadataChanged)
   Q_PROPERTY(QString imageSize READ imageSize NOTIFY metadataChanged)
   Q_PROPERTY(QString headerMagic READ headerMagic NOTIFY metadataChanged)
@@ -88,6 +89,7 @@ public:
 
   QString consoleTarget() const { return m_consoleTarget; }
   QString buildType() const { return m_buildType; }
+  QString blockType() const { return m_blockType; }
   QString kernelVerOrType() const {
     if (!m_ceVersion.isEmpty()) return m_ceVersion;
     if (!m_buildType.isEmpty()) return m_buildType;
@@ -168,6 +170,7 @@ private:
 
   QString m_consoleTarget;
   QString m_buildType;
+  QString m_blockType;
   QString m_imageSize;
   QString m_headerMagic;
   QString m_headerVersion;

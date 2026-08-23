@@ -12,6 +12,10 @@ QQC2.ToolBar {
     signal menuRequested
     signal fileOpened(string filePath, string key)
 
+    function openOpenFileDialog() {
+        openFileDialog.open();
+    }
+
     position: QQC2.ToolBar.Header
     Kirigami.Dialog {
         id: openFileDialog

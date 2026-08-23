@@ -70,8 +70,12 @@ Kirigami.Page {
                             if (typeof nandController !== "undefined" && nandController.isLoading) {
                                 return qsTr("Loading NAND Image…");
                             }
-                            if (typeof nandController !== "undefined" && nandController.isNandLoaded && nandController.consoleTarget !== "") {
-                                return nandController.consoleTarget + " (" + nandController.imageSize + ")";
+                            if (typeof nandController !== "undefined" && nandController.isNandLoaded) {
+                                var titleStr = nandController.consoleTarget !== "" ? nandController.consoleTarget : qsTr("Target NAND Image");
+                                if (nandController.imageSize !== "") {
+                                    titleStr += " (" + nandController.imageSize + ")";
+                                }
+                                return titleStr;
                             }
                             var path = (typeof nandController !== "undefined") ? nandController.loadedFilePath : "";
                             return path !== "" ? qsTr("Target NAND Image") : qsTr("No Image Loaded");
@@ -98,7 +102,16 @@ Kirigami.Page {
                     icon.name: "document-open"
                     text: qsTr("Browse…")
                     enabled: !(typeof nandController !== "undefined" && nandController.isLoading)
-                    onClicked: homeFilePicker.open()
+                    onClicked: {
+                        var appWin = root.Window ? root.Window.window : null;
+                        if (appWin && typeof appWin.openOpenFileDialog === "function") {
+                            appWin.openOpenFileDialog();
+                        } else if (typeof statusBar !== "undefined" && typeof statusBar.openOpenFileDialog === "function") {
+                            statusBar.openOpenFileDialog();
+                        } else {
+                            homeFilePicker.open();
+                        }
+                    }
                 }
             }
         }
