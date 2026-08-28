@@ -2,3 +2,4 @@ build
 PLANS
 *.bin
 _*
+*_.md

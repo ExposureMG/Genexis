@@ -1,100 +1,61 @@
 # Genexis
 
-Cross-platform Xbox 360 JTAG/RGH toolkit.
+WIP
 
-## Features
+Cross-platform Xbox 360 JTAG/RGH toolkit
 
-* NAND Builder
-* SPI, eMMC, and XSVF/SVF Flashing
-* UpdServer Network Flashing
-* BadUpdate USB Builder
+## Info
 
-Planned:
+The goal is to re-implement most of what J-Runner can do, cross-platform, in C++.
 
-* Launch.ini, Rgloader.ini & Options.ini editor
-* POST and UART Reading
-
-## Support
-
-Genexis should compile for all Linux and BSD distros, but we only provide official support for Debian/Ubuntu, Fedora, and Arch Linux.
-
-Genexis should also compile for x86-32, x86-64, and arm64.
-
-| OS                 | Support                                              | 32-bit | 64-bit | arm64    | Compilers        |
-| ------------------ | ---------------------------------------------------- | ------ | ------ | -------- | ---------------- |
-| Windows 10+        | ✅                                                   | ✅     | ✅     | ✅       | MSVC, GCC, Clang |
-| Windows Vista SP2+ | [Genexis Qt5](https://github.com/GxOSS/Genexis-qt5)] | ✅     | ✅     | ⚠️       | MinGW            |
-| Linux              | ✅                                                   | ✅     | ✅     | ✅       | GCC, Clang       |
-| MacOS              | ✅                                                   | ⚠️     | ✅     | ✅       | Clang            |
-| Android            | ✅                                                   | ⚠️     | ⚠️     | ✅       | Clang            |
-| IPadOS             | ✅                                                   | ⚠️     | ⚠️     | M-Series | Clang            |
-
-## Devices
-
-NAND / eMMC Flashing:
-
-- xFlasher360
-- PicoFlasher v4+
-- JR-Programmer
-- NAND-X
-- TX DemoN
-- UpdServ
-
-XSVF / SVF / Timing:
-
-- xFlasher360
-- Pico-DirtyJTAG
-- JR-Programmer
-- NAND-X
-- TX DemoN
-
-
-## Integrations
-
-NAND Builders:
-
-- Build360 (Planned)
-- gxbuild3 (Built-in)
-- xeBuild (Windows-only)
+- NAND Info
+- NAND Building
+- NAND Flashing
+- SVF / XSVF Flashing
+- Timings Interface
+- UART and POST
+- XeLL Network
 
 Flashers:
 
-- NandProMax
-- FTDI2SPI
-- xsvftool
+- PicoFlasher v4+
+- xFlasher360 / Squirt Programmer
+- TX JR-Programmer v1/v2
+- TX NAND-X
+- TX Demon
+- xeBuild / DashLaunch UpdServ
 
+## Platforms
 
-## License
+Full Support
 
-Genexis is brought to you under the GNU General Public License Version 2.0.
+- Windows 10+
+- Linux
+- MacOS
+- iPadOS
+- Android
+- BSD
 
-See [LICENSE](./LICENSE)
+Partial Support
 
-Before release:
+- iPhone (No USB Flashers)
 
-- Statically link xsvftool
-- Statically link FTDI2SPI
+## Build
 
+See [build](./docs/build.md)
 
-## Credits
+## Developer Info
 
-- Team Xecuter / Octal450 / Mena PhenomMod / mitchellwaite - J-Runner with Extras
+**Stack:**
 
-Heavy inspiration for this project, Genexis uses J-Runner xeBuild folders and XeLL images.
+- C++23 CMake
+- Qt6 QML
+- KDE Frameworks Kirigami
 
+**Libraries Used:**
 
-## Backend Credits
-
-- gxbuild3, by ExposureMG
-
-- Build360, by Mate Kukri
-
-- xeBuild, by [cOz]
-
-- FTDI2SPI, by Swizzy, Octal450 and Mena
-
-- xsvftool, by Mena PhenomMod
-
-- NandProMax, by ExposureMG
-
-- UpdClient, by ExposureMG
+- [gxbuild3](https://github.com/ExposureMG/gxbuild3.git)
+- [FTDI2SPI](https://github.com/ExposureMG/FTDI2SPI.git) (Experimental libftdi version)
+- [xsvftool](https://github.com/ExposureMG/xsvftool.git) (Experimental libftdi version)
+- [NandProMax](https://github.com/ExposureMG/NandProMax.git)
+- [UpdClient](https://github.com/ExposureMG/UpdClient.git)

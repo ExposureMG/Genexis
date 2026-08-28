@@ -4,6 +4,7 @@
 #include "pages/NandBuilderController.hpp"
 #include "pages/Settings.hpp"
 
+#include <KIconTheme>
 #include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -11,11 +12,15 @@
 #include <QUrl>
 
 int main(int argc, char *argv[]) {
+  KIconTheme::initTheme();
   QApplication app(argc, argv);
 
   QCoreApplication::setOrganizationName(QStringLiteral("org.gxoss"));
   QCoreApplication::setApplicationName(QStringLiteral("genexis"));
   QGuiApplication::setDesktopFileName(QStringLiteral("org.gxoss.genexis"));
+  #ifdef Q_OS_WIN
+    QApplication::setStyle("breeze");
+  #endif
 
   if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
     QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
