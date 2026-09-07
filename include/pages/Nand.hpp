@@ -4,6 +4,8 @@
 #include <QString>
 #include <qqmlregistration.h>
 
+#include "pages/NandInfoMapper.hpp"
+
 class Nand : public QObject {
   Q_OBJECT
   QML_ELEMENT
@@ -157,8 +159,8 @@ Q_SIGNALS:
 
 private:
   void parseNandData(const std::vector<uint8_t> &data);
-  void parseKeyvault(const std::vector<uint8_t> &cpuKeyBytes,
-                     const std::vector<uint8_t> &rawKv);
+  void applySnapshot(const NandInfoSnapshot &snapshot, bool decrypted);
+  NandInfoSnapshot currentSnapshot() const;
 
   bool m_isLoading{false};
   bool m_isNandLoaded{false};
