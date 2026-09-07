@@ -3,7 +3,7 @@
 #include "backend/BackendManager.hpp"
 #include "pages/Nand.hpp"
 #include "pages/Settings.hpp"
-#include "vendor/USBDiscovery.hpp"
+#include "backend/FlasherDiscovery.hpp"
 
 #include <QDateTime>
 #include <QDebug>
@@ -15,7 +15,7 @@
 #include <sstream>
 #include <thread>
 
-using USBDiscovery = Genexis::Devices::Vendor::USBDiscovery;
+using FlasherDiscovery = gxapi::backend::FlasherDiscovery;
 using BackendManager = gxapi::backend::BackendManager;
 
 Flasher::Flasher(QObject *parent) : QObject(parent) {
@@ -69,7 +69,7 @@ void Flasher::setTargetIp(const QString &ip) {
 #include "backend/FlasherDeviceRegistry.hpp"
 
 void Flasher::checkUsbDevices() {
-  auto devices = USBDiscovery::getAllDevices();
+  auto devices = FlasherDiscovery::getAllDevices();
   QString newImage =
       QStringLiteral("qrc:/qt/qml/org/gxoss/genexis/assets/noflasher.png");
   QString newName = QStringLiteral("No Flasher Connected");

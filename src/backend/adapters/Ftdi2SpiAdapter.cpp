@@ -4,11 +4,7 @@
 #include <mutex>
 #include <string>
 
-extern "C" {
-int spi(int mode, int size, char *file, int startblock, int length);
-int emmc_read(const char *file, int startblock, int length);
-int emmc_write(const char *file, int startblock, int length);
-}
+#include <FTDI2SPI.h>
 
 namespace gxapi::backend {
 
@@ -129,7 +125,7 @@ Ftdi2SpiAdapter::writeNand(const std::filesystem::path &inputPath,
 
   int rc = 0;
   if (config.media == FlashMediaType::Emmc) {
-    rc = emmc_write(pathStr.c_str(), static_cast<int>(startBlock), 0);
+    rc = emmc_write(pathStr.c_str(), static_cast<int>(startBlock));
   } else {
     
     rc = spi(3, 16, const_cast<char *>(pathStr.c_str()),

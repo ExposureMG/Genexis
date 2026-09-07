@@ -3,13 +3,6 @@
 #include "api/Format.hpp"
 
 #include "Utils.hpp"
-#include "vendor/USBStorage.hpp"
-
-#ifdef _WIN32
-#include "vendor/platforms/Windows.hpp"
-#else
-#include "vendor/platforms/UNIX.hpp"
-#endif
 
 #include "nand/FlashImage.hpp"
 #include "nand/NandTypes.hpp"
@@ -289,32 +282,6 @@ const char *entryKindLabel(EntryKind k) noexcept {
     return "File";
   }
   return "Unknown";
-}
-
-const char *entryKindSlintStr(EntryKind k) noexcept {
-  switch (k) {
-  case EntryKind::Dir:
-    return "dir";
-  case EntryKind::Nand:
-    return "nand";
-  case EntryKind::Stfs:
-    return "stfs";
-  case EntryKind::Pec:
-    return "stfs"; 
-  case EntryKind::Fatx:
-    return "fatx";
-  case EntryKind::FlashFs:
-    return "flashfs";
-  case EntryKind::SysUpdate:
-    return "sysupdate";
-  case EntryKind::Xcp:
-    return "stfs"; 
-  case EntryKind::Xdbf:
-    return "file";
-  case EntryKind::File:
-    return "file";
-  }
-  return "file";
 }
 
 struct FsContext::Impl {

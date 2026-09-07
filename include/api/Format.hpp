@@ -30,8 +30,6 @@ enum class EntryKind {
 
 [[nodiscard]] const char *entryKindLabel(EntryKind k) noexcept;
 
-[[nodiscard]] const char *entryKindSlintStr(EntryKind k) noexcept;
-
 struct FsEntry {
   std::string name; 
   EntryKind kind{EntryKind::File};

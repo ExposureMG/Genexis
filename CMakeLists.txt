@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.28)
 
+include(cmake/GenexisCompiler.cmake)
+genexis_select_compilers()
+
 project(genexis LANGUAGES C CXX)
+genexis_validate_compilers()
 
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
@@ -29,30 +33,14 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-if(NOT (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64|x64)$" OR CMAKE_VS_PLATFORM_NAME STREQUAL "x64"))
-    message(FATAL_ERROR "Genexis can only be compiled on x86-64 architecture.")
-endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-    message(FATAL_ERROR "Genexis can only be compiled for 64-bit (x86-64) target.")
+    message(FATAL_ERROR "Genexis can only be compiled for 64-bit systems.")
 endif()
 
-if(WIN32)
-    
-    if(NOT MSVC)
-        message(FATAL_ERROR "Windows builds require MSVC compiler.")
-    endif()
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    
-    if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-        message(FATAL_ERROR "Linux builds require GCC (g++) or Clang (clang++) compiler.")
-    endif()
-elseif(APPLE)
-    
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        message(FATAL_ERROR "MacOS builds require Clang++ compiler.")
-    endif()
-else()
+if(NOT (WIN32 OR ANDROID OR CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE))
     message(FATAL_ERROR "Unsupported operating system: ${CMAKE_SYSTEM_NAME}")
 endif()
 
@@ -69,6 +57,8 @@ find_package(Qt6 REQUIRED COMPONENTS
     Gui
     QuickControls2
     Widgets
+    Network
+    SerialPort
 )
 
 find_package(KF6 REQUIRED COMPONENTS
@@ -79,40 +69,37 @@ find_package(KF6 REQUIRED COMPONENTS
     IconThemes
 )
 
-add_compile_options($<$<COMPILE_LANGUAGE:C>:-Dasm=__asm__>)
-add_compile_options(-Wno-error=zero-as-null-pointer-constant -Wno-zero-as-null-pointer-constant -Wno-error=date-time -Wno-date-time)
+if(MSVC)
+    add_compile_definitions(
+        _CRT_SECURE_NO_WARNINGS
+        _CRT_NONSTDC_NO_WARNINGS
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
+    add_compile_options(/permissive- /Zc:preprocessor)
+else()
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:-Dasm=__asm__>)
+    add_compile_options(-Wno-error=zero-as-null-pointer-constant -Wno-zero-as-null-pointer-constant -Wno-error=date-time -Wno-date-time)
+endif()
 
 set(BUILD_SHARED_LIBS OFF)
-add_subdirectory(extern/gxbuild3)
-add_subdirectory(extern/UpdClient)
-add_subdirectory(extern/xsvftool)
 
-set(FTDI2SPI_SOURCES
-    extern/FTDI2SPI/src/Main.cpp
-    extern/FTDI2SPI/src/Flasher.cpp
-    extern/FTDI2SPI/src/XNAND.cpp
-    extern/FTDI2SPI/src/XSPI.cpp
-    extern/FTDI2SPI/src/XeMMC.cpp
-    extern/FTDI2SPI/src/sfc.cpp
-    extern/FTDI2SPI/src/stdafx.cpp
-    extern/FTDI2SPI/src/wrapper_spi.cpp
-)
-add_library(FTDI2SPI STATIC ${FTDI2SPI_SOURCES})
-target_compile_definitions(FTDI2SPI PRIVATE -Dmain=ftdi2spi_dummy_main _CRT_SECURE_NO_WARNINGS)
-target_include_directories(FTDI2SPI
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/extern/FTDI2SPI/include
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/extern/xsvftool/extern/libftdi/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/extern/xsvftool/extern/libusb/libusb
-        ${CMAKE_CURRENT_BINARY_DIR}/extern/xsvftool/extern/libftdi/src
-)
-target_link_libraries(FTDI2SPI PRIVATE ftdi1-static)
+add_subdirectory(extern/UpdClient)
+
+if(MSVC)
+    include(cmake/GenexisGxBuild3MSVC.cmake)
+else()
+    add_subdirectory(extern/gxbuild3)
+endif()
+
+
+add_subdirectory(extern/xsvftool)
+add_subdirectory(extern/FTDI2SPI)
 
 set(BUILD_SHARED_LIBS ON)
 
 set(NANDPROMAX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/NandProMax)
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
+if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     set(CARGO_BUILD_FLAG "--release")
     set(NANDPROMAX_BUILD_DIR ${NANDPROMAX_DIR}/target/release)
 else()
@@ -144,9 +131,8 @@ set(GENEXIS_SOURCES
     src/Updater.cpp
     src/Utils.cpp
     src/api/Format.cpp
-    src/vendor/USB.cpp
-    src/vendor/USBDiscovery.cpp
     src/backend/BackendManager.cpp
+    src/backend/FlasherDiscovery.cpp
     src/backend/adapters/NandProMaxAdapter.cpp
     src/backend/adapters/Ftdi2SpiAdapter.cpp
     src/backend/adapters/XsvfToolAdapter.cpp
@@ -162,7 +148,7 @@ set(GENEXIS_SOURCES
     src/pages/Network.cpp
     src/pages/Settings.cpp
     include/StartupManager.hpp
-    include/vendor/USBDiscovery.hpp
+    include/backend/FlasherDiscovery.hpp
     include/backend/IFlashService.hpp
     include/backend/IJtagService.hpp
     include/backend/IBuilderService.hpp
@@ -185,16 +171,6 @@ set(GENEXIS_SOURCES
     include/pages/Settings.hpp
 )
 
-if(WIN32)
-    list(APPEND GENEXIS_SOURCES
-        src/vendor/platforms/Windows.cpp
-    )
-else()
-    list(APPEND GENEXIS_SOURCES
-        src/vendor/platforms/UNIX.cpp
-    )
-endif()
-
 qt_add_executable(genexis ${GENEXIS_SOURCES})
 
 qt_policy(SET QTP0004 NEW)
@@ -212,13 +188,6 @@ qt_add_qml_module(genexis
         QML/components/NandBuilderDonor.qml
         QML/components/NandBuilderSimple.qml
         QML/components/StatusBar.qml
-        
-        
-        
-        
-        
-        
-        
         QML/components/nand/Components.qml
         QML/components/nand/Keyvault.qml
         QML/components/nand/Overview.qml
@@ -255,7 +224,8 @@ target_include_directories(genexis PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/extern/UpdClient/include
     ${CMAKE_CURRENT_SOURCE_DIR}/extern/NandProMax/include
     ${CMAKE_CURRENT_SOURCE_DIR}/extern/FTDI2SPI/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern/xsvftool/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern/xsvftool/xsvftool
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern/xsvftool/libxsvf
     ${ZLIB_INCLUDE_DIRS}
 )
 
@@ -271,27 +241,34 @@ target_link_libraries(genexis PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
     Qt6::Widgets
+    Qt6::Network
+    Qt6::SerialPort
     KF6::Kirigami
     KF6::I18n
     KF6::CoreAddons
 )
 
 if(WIN32)
-    target_link_libraries(genexis PRIVATE setupapi winusb advapi32 user32 ws2_32)
+    target_link_libraries(genexis PRIVATE advapi32 user32 ws2_32 setupapi winusb)
+elseif(ANDROID)
+    target_link_libraries(genexis PRIVATE log)
+elseif(APPLE)
+    target_link_libraries(genexis PRIVATE
+        "-framework CoreFoundation"
+    )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
-    pkg_check_modules(LIBUDEV REQUIRED libudev)
-    target_include_directories(genexis PRIVATE ${LIBUSB_INCLUDE_DIRS} ${LIBUDEV_INCLUDE_DIRS})
-    target_link_libraries(genexis PRIVATE ${LIBUSB_LIBRARIES} ${LIBUDEV_LIBRARIES} pthread dl m)
+    target_link_libraries(genexis PRIVATE pthread dl m)
 endif()
 
-if(NOT WIN32)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_options(genexis PRIVATE -Wl,--allow-multiple-definition)
 endif()
 
 include(GNUInstallDirs)
-install(TARGETS genexis DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS genexis FTDI2SPI xsvftool
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 install(FILES org.gxoss.genexis.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 install(FILES org.gxoss.genexis.metainfo.xml DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
 install(FILES org.gxoss.genexis.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
