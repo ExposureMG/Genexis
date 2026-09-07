@@ -142,6 +142,7 @@ set(GENEXIS_SOURCES
     src/pages/Explorer.cpp
     src/pages/Editor.cpp
     src/pages/Nand.cpp
+    src/pages/NandInfoMapper.cpp
     src/pages/NandBuilderController.cpp
     src/pages/Flasher.cpp
     src/pages/BadUpdate.cpp
@@ -164,6 +165,7 @@ set(GENEXIS_SOURCES
     include/pages/Explorer.hpp
     include/pages/Editor.hpp
     include/pages/Nand.hpp
+    include/pages/NandInfoMapper.hpp
     include/pages/NandBuilderController.hpp
     include/pages/Flasher.hpp
     include/pages/BadUpdate.hpp
@@ -247,6 +249,25 @@ target_link_libraries(genexis PRIVATE
     KF6::I18n
     KF6::CoreAddons
 )
+
+include(CTest)
+if(BUILD_TESTING)
+    qt_add_executable(genexis_nand_info_mapper_tests
+        tests/NandInfoMapperTests.cpp
+        src/pages/NandInfoMapper.cpp
+        include/pages/NandInfoMapper.hpp
+    )
+    target_include_directories(genexis_nand_info_mapper_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/extern/gxbuild3/include
+    )
+    target_link_libraries(genexis_nand_info_mapper_tests PRIVATE
+        Qt6::Test
+        Qt6::Core
+        gxbuild3_lib
+    )
+    add_test(NAME nand_info_mapper COMMAND genexis_nand_info_mapper_tests)
+endif()
 
 if(WIN32)
     target_link_libraries(genexis PRIVATE advapi32 user32 ws2_32 setupapi winusb)
