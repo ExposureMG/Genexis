@@ -165,8 +165,7 @@ NandInfoSnapshot MapDecryptedNandInfo(const AllNandInfo &info,
     current.cbLdv = current.cbALdv;
     current.cbPairing = current.cbAPairing;
   }
-  if (current.cbLdv.isEmpty() && info.bootloaders.cb_b &&
-      info.bootloaders.cb_b->present) {
+  if (info.bootloaders.cb_b && info.bootloaders.cb_b->present) {
     mapLockdownValues(*info.bootloaders.cb_b, current.cbLdv,
                       current.cbPairing);
   }
