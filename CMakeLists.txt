@@ -267,6 +267,22 @@ if(BUILD_TESTING)
         gxbuild3_lib
     )
     add_test(NAME nand_info_mapper COMMAND genexis_nand_info_mapper_tests)
+
+    qt_add_executable(genexis_gxbuild3_adapter_tests
+        tests/GxBuild3AdapterTests.cpp
+        src/backend/adapters/GxBuild3Adapter.cpp
+        include/backend/adapters/GxBuild3Adapter.hpp
+    )
+    target_include_directories(genexis_gxbuild3_adapter_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/extern/gxbuild3/include
+    )
+    target_link_libraries(genexis_gxbuild3_adapter_tests PRIVATE
+        Qt6::Test
+        Qt6::Core
+        gxbuild3_lib
+    )
+    add_test(NAME gxbuild3_adapter COMMAND genexis_gxbuild3_adapter_tests)
 endif()
 
 if(WIN32)

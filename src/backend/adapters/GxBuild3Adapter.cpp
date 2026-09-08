@@ -1,24 +1,223 @@
 #include "backend/adapters/GxBuild3Adapter.hpp"
-#include "Library.hpp"
 #include "Args.hpp"
-#include "utils/FileManager.hpp"
-#include "ini/IniParser.hpp"
+#include "Library.hpp"
+#include "cli/BuildArgs.hpp"
+#include "cli/BuildInputResolver.hpp"
 #include "nand/objects/Keyvault.hpp"
-#include "utils/Utils.hpp"
-#include "StartupManager.hpp"
 
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QStandardPaths>
+#include <QTemporaryDir>
 #include <QTextStream>
 #include <algorithm>
+#include <cctype>
 #include <fstream>
-#include <sstream>
+#include <span>
+#include <string_view>
+#include <system_error>
+#include <unordered_set>
+#include <utility>
 
 namespace gxapi::backend {
 
+namespace {
+
+std::string lowercase(std::string_view value) {
+  std::string result(value);
+  std::transform(result.begin(), result.end(), result.begin(),
+                 [](unsigned char character) {
+                   return static_cast<char>(std::tolower(character));
+                 });
+  return result;
+}
+
+std::string normalizeOptionName(std::string_view value) {
+  while (!value.empty() &&
+         std::isspace(static_cast<unsigned char>(value.front()))) {
+    value.remove_prefix(1);
+  }
+  while (!value.empty() && std::isspace(static_cast<unsigned char>(value.back()))) {
+    value.remove_suffix(1);
+  }
+  while (!value.empty() && value.front() == '-') {
+    value.remove_prefix(1);
+  }
+  return lowercase(value);
+}
+
+bool isRecognizedUiOption(std::string_view name) {
+  static const std::unordered_set<std::string> recognized{
+      "cygnos",      "demon",       "olddvd",       "nodvd",
+      "nomobile",    "nofcrt",      "noremap",      "noecdremap",
+      "nandmu",      "nosecurity",  "nosusecurity", "smcnocheck",
+      "nochecksmc",  "noblpatch",   "cbldv",        "pairing_data",
+      "pairingdata", "pd",          "cfldv",        "xellbutton",
+      "xellbutton2", "dualboot",    "cputemp",      "gputemp",
+      "edramtemp",   "overcputemp", "overgputemp",  "overedramtemp",
+      "cpufan",      "gpufan",      "dvdkey",       "avregion",
+      "gameregion",  "dvdregion",   "macid"};
+  return recognized.contains(std::string(name));
+}
+
+std::expected<std::string, std::string>
+normalizeCpuKey(std::string_view value) {
+  std::string compact;
+  compact.reserve(value.size());
+  for (const unsigned char character : value) {
+    if (!std::isspace(character)) {
+      compact.push_back(static_cast<char>(character));
+    }
+  }
+  const auto validated = gxbuild3::NAND::validate_cpu_key_hex(compact);
+  if (validated.status == gxbuild3::NAND::CpuKeyStatus::Invalid) {
+    return std::unexpected(validated.message);
+  }
+
+  static constexpr std::string_view hex = "0123456789ABCDEF";
+  std::string normalized;
+  normalized.reserve(validated.key.size() * 2);
+  for (const uint8_t byte : validated.key) {
+    normalized.push_back(hex[byte >> 4]);
+    normalized.push_back(hex[byte & 0x0f]);
+  }
+  return normalized;
+}
+
+std::expected<void, std::string>
+ensureDirectory(const std::filesystem::path &directory,
+                std::string_view description) {
+  std::error_code error;
+  std::filesystem::create_directories(directory, error);
+  if (error) {
+    return std::unexpected("Could not create " + std::string(description) +
+                           " '" + directory.string() + "': " +
+                           error.message());
+  }
+  if (!std::filesystem::is_directory(directory, error) || error) {
+    return std::unexpected("Expected " + std::string(description) +
+                           " to be a directory: " + directory.string());
+  }
+  return {};
+}
+
+std::expected<void, std::string>
+copySelectedFile(const std::filesystem::path &source,
+                 const std::filesystem::path &destination,
+                 std::string_view description) {
+  std::error_code error;
+  const auto status = std::filesystem::status(source, error);
+  if (error || !std::filesystem::is_regular_file(status)) {
+    std::string message = "Could not read selected " + std::string(description) +
+                          " file '" + source.string() + "'";
+    if (error) {
+      message += ": " + error.message();
+    }
+    return std::unexpected(std::move(message));
+  }
+  const auto directory = ensureDirectory(destination.parent_path(),
+                                         "gxbuild3 staging directory");
+  if (!directory) {
+    return directory;
+  }
+  std::filesystem::copy_file(source, destination,
+                             std::filesystem::copy_options::overwrite_existing,
+                             error);
+  if (error) {
+    return std::unexpected("Could not stage selected " +
+                           std::string(description) + " file '" +
+                           source.string() + "' as '" + destination.string() +
+                           "': " + error.message());
+  }
+  return {};
+}
+
+std::vector<std::string>
+availableVersionsAt(const std::filesystem::path &xeBuildDataPath) {
+  std::vector<std::string> versions;
+  std::error_code error;
+  for (std::filesystem::directory_iterator it(xeBuildDataPath, error), end;
+       !error && it != end; it.increment(error)) {
+    if (!it->is_directory(error) || error) {
+      continue;
+    }
+    bool hasBuildIni = false;
+    std::error_code childError;
+    for (std::filesystem::directory_iterator child(it->path(), childError),
+         childEnd;
+         !childError && child != childEnd; child.increment(childError)) {
+      const auto filename = child->path().filename().string();
+      if (child->is_regular_file(childError) && !childError &&
+          filename.starts_with('_') && child->path().extension() == ".ini") {
+        hasBuildIni = true;
+        break;
+      }
+    }
+    if (hasBuildIni) {
+      versions.push_back(it->path().filename().string());
+    }
+  }
+  std::sort(versions.begin(), versions.end(),
+            [](const std::string &left, const std::string &right) {
+              try {
+                return std::stoll(left) > std::stoll(right);
+              } catch (...) {
+                return left > right;
+              }
+            });
+  return versions;
+}
+
+std::string describeResolutionError(
+    const gxbuild3::cli::ResolutionError &error) {
+  std::string message = error.message;
+  if (!error.path.empty()) {
+    message += " [path: " + error.path.string() + "]";
+  }
+  if (!error.item.empty()) {
+    message += " [item: " + error.item + "]";
+  }
+  return message;
+}
+
+std::expected<void, std::string>
+writeOutput(const std::filesystem::path &path, std::span<const uint8_t> bytes) {
+  if (path.has_parent_path()) {
+    const auto directory = ensureDirectory(path.parent_path(),
+                                           "NAND output directory");
+    if (!directory) {
+      return directory;
+    }
+  }
+  std::ofstream output(path, std::ios::binary | std::ios::trunc);
+  if (!output) {
+    return std::unexpected("Could not open output NAND for writing: " +
+                           path.string());
+  }
+  output.write(reinterpret_cast<const char *>(bytes.data()),
+               static_cast<std::streamsize>(bytes.size()));
+  if (!output.good()) {
+    return std::unexpected("Could not write output NAND: " + path.string());
+  }
+  return {};
+}
+
+std::filesystem::path defaultAppDataPath() {
+  return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+      .toStdString();
+}
+
+} // namespace
+
+GxBuild3Adapter::GxBuild3Adapter(std::filesystem::path xeBuildDataPath)
+    : m_xeBuildDataPath(std::move(xeBuildDataPath)) {}
+
 std::filesystem::path GxBuild3Adapter::getXeBuildDataPath() const {
-  QString appData = StartupManager::instance().appDataPath();
+  if (!m_xeBuildDataPath.empty()) {
+    return m_xeBuildDataPath;
+  }
+  const QString appData = QString::fromStdString(defaultAppDataPath().string());
   return std::filesystem::path(
       QDir(appData)
           .filePath(QStringLiteral("data/nand/xebuild"))
@@ -26,13 +225,13 @@ std::filesystem::path GxBuild3Adapter::getXeBuildDataPath() const {
 }
 
 std::filesystem::path GxBuild3Adapter::getXellDataPath() const {
-  QString appData = StartupManager::instance().appDataPath();
+  const QString appData = QString::fromStdString(defaultAppDataPath().string());
   return std::filesystem::path(
       QDir(appData).filePath(QStringLiteral("data/xell-images")).toStdString());
 }
 
 std::filesystem::path GxBuild3Adapter::getSmcDataPath() const {
-  QString appData = StartupManager::instance().appDataPath();
+  const QString appData = QString::fromStdString(defaultAppDataPath().string());
   return std::filesystem::path(
       QDir(appData).filePath(QStringLiteral("data/nand/smc")).toStdString());
 }
@@ -396,187 +595,163 @@ GxBuild3Adapter::resolveUnderlyingImageType(const std::string &simpleType,
   return "retail";
 }
 
+std::expected<gxbuild3::cli::BuildRequest, std::string>
+GxBuild3Adapter::resolveBuildRequest(
+    const NandBuildConfig &config,
+    const std::filesystem::path &stagingRoot) const {
+  if (config.xellOnly) {
+    return std::unexpected(
+        "XeLL-only images are not supported by the gxbuild3 NAND resolver");
+  }
+
+  std::string version = config.version;
+  if (version == "Latest") {
+    const auto versions = availableVersionsAt(getXeBuildDataPath());
+    if (versions.empty()) {
+      return std::unexpected(
+          "Could not resolve Latest because no gxbuild3 versions are available");
+    }
+    version = versions.front();
+  }
+  if (version.empty()) {
+    return std::unexpected("A gxbuild3 version is required");
+  }
+  if (config.imageType.empty()) {
+    return std::unexpected("A gxbuild3 image type is required");
+  }
+  if (config.consoleModel.empty()) {
+    return std::unexpected("A gxbuild3 console model is required");
+  }
+
+  const std::string imageType = lowercase(config.imageType);
+  const auto buildType = kBuildTypeMap.find(imageType);
+  if (buildType == kBuildTypeMap.end()) {
+    return std::unexpected("Unsupported gxbuild3 image type: " +
+                           config.imageType);
+  }
+
+  const std::string consoleStem = lowercase(
+      std::filesystem::path(config.consoleModel).stem().string());
+  const auto imageGeometry = kImageTypeMap.find(consoleStem);
+  if (imageGeometry == kImageTypeMap.end()) {
+    return std::unexpected("Unsupported gxbuild3 console model: " +
+                           config.consoleModel);
+  }
+
+  const auto staging = ensureDirectory(stagingRoot, "gxbuild3 staging root");
+  if (!staging) {
+    return std::unexpected(staging.error());
+  }
+  if (config.customKvPath) {
+    const auto copied = copySelectedFile(*config.customKvPath,
+                                         stagingRoot / "kv.bin", "keyvault");
+    if (!copied) {
+      return std::unexpected(copied.error());
+    }
+  }
+  if (config.customSmcPath) {
+    const auto copied = copySelectedFile(*config.customSmcPath,
+                                         stagingRoot / "smc.bin", "SMC");
+    if (!copied) {
+      return std::unexpected(copied.error());
+    }
+  }
+
+  gxbuild3::cli::BuildArgs args{};
+  args.build_ini = std::filesystem::path(version) /
+                   ("_" + imageType + ".ini");
+  args.section = consoleStem;
+  args.build_type = buildType->second;
+  args.image_type = imageGeometry->second;
+  args.source_dirs = {stagingRoot, getXeBuildDataPath() / "data",
+                      getXeBuildDataPath() / version,
+                      getXeBuildDataPath() / "common"};
+  args.input_path = config.sourceNandPath;
+  args.output_path = config.outputPath.empty()
+                         ? defaultAppDataPath() / "output" / "updflash.bin"
+                         : std::filesystem::path(config.outputPath);
+
+  if (!config.cpuKeyHex.empty()) {
+    const auto cpuKey = normalizeCpuKey(config.cpuKeyHex);
+    if (!cpuKey) {
+      return std::unexpected("Invalid CPU key: " + cpuKey.error());
+    }
+    args.cpu_key = *cpuKey;
+  }
+
+  args.config.reserve(config.rawOptions.size());
+  for (const auto &[rawName, value] : config.rawOptions) {
+    const std::string name = normalizeOptionName(rawName);
+    if (!isRecognizedUiOption(name)) {
+      continue;
+    }
+    args.config.push_back(name + "=" + (value.empty() ? "true" : value));
+  }
+
+  args.addons.reserve(config.patches.size());
+  for (const auto &selected : config.patches) {
+    const std::filesystem::path selectedPath(selected);
+    const std::string addon = selectedPath.stem().string();
+    if (addon.empty()) {
+      return std::unexpected("Selected gxbuild3 add-on has no logical name: " +
+                             selected);
+    }
+    if (selectedPath.is_absolute() || selectedPath.has_parent_path()) {
+      const auto copied = copySelectedFile(
+          selectedPath, stagingRoot / "bin" / (addon + ".bin"), "add-on");
+      if (!copied) {
+        return std::unexpected(copied.error());
+      }
+    }
+    args.addons.push_back(addon);
+  }
+
+  gxbuild3::cli::BuildInputResolver resolver{getXeBuildDataPath()};
+  auto request = resolver.Resolve(args);
+  if (!request) {
+    return std::unexpected(describeResolutionError(request.error()));
+  }
+  return std::move(*request);
+}
+
 std::expected<BuildResult, std::string>
 GxBuild3Adapter::buildImage(const NandBuildConfig &config,
                             BuilderProgressCallback progressCb) {
   if (progressCb) {
     progressCb(BuilderProgressInfo{
         .percentage = 10,
-        .statusMessage = "Preparing gxbuild3 native engine parameters..."});
+        .statusMessage = "Resolving gxbuild3 NAND inputs..."});
   }
 
-  std::string resolvedVersion = config.version;
-  if (resolvedVersion.empty() || resolvedVersion == "Latest") {
-    auto avail = getAvailableVersions();
-    resolvedVersion = avail.empty() ? "17559" : avail.front();
+  QTemporaryDir staging(QDir::temp().filePath(
+      QStringLiteral("genexis-gxbuild3-XXXXXX")));
+  if (!staging.isValid()) {
+    return std::unexpected("Could not create isolated gxbuild3 staging root");
   }
-
-  std::filesystem::path xeDataPath = getXeBuildDataPath();
-  std::filesystem::path fwDir = xeDataPath / "data";
-
-  std::vector<uint8_t> cpuKeyBytes;
-  if (!config.cpuKeyHex.empty()) {
-    auto keyRes = gxbuild3::NAND::validate_cpu_key_hex(config.cpuKeyHex);
-    if (keyRes.status == gxbuild3::NAND::CpuKeyStatus::Valid ||
-        keyRes.status == gxbuild3::NAND::CpuKeyStatus::Corrected) {
-      cpuKeyBytes = std::move(keyRes.key);
-    } else {
-      for (size_t i = 0; i + 1 < config.cpuKeyHex.length(); i += 2) {
-        try {
-          uint8_t byteVal = static_cast<uint8_t>(
-              std::stoul(config.cpuKeyHex.substr(i, 2), nullptr, 16));
-          cpuKeyBytes.push_back(byteVal);
-        } catch (...) {
-        }
-      }
-    }
+  const auto request = resolveBuildRequest(
+      config, std::filesystem::path(staging.path().toStdString()));
+  if (!request) {
+    return std::unexpected(request.error());
   }
-
-  OptionsManager optionsMgr;
-  for (const auto &[key, val] : config.rawOptions) {
-    if (val.empty()) {
-      optionsMgr.set_bool(key, true);
-    } else {
-      optionsMgr.set(key, val);
-    }
-  }
-
-  InputMetadata metadata{};
-  if (config.sourceNandPath && std::filesystem::exists(*config.sourceNandPath)) {
-    if (progressCb) {
-      progressCb(BuilderProgressInfo{
-          .percentage = 20,
-          .statusMessage = "Extracting donor NAND metadata..."});
-    }
-    auto nandData = Utils::read_file(*config.sourceNandPath);
-    if (nandData) {
-      auto extracted = GxBuild::ExtractMetadata(*nandData, cpuKeyBytes);
-      if (extracted) {
-        metadata = std::move(*extracted);
-      }
-    }
-  }
-
-  if (metadata.cpu_key.empty() && !cpuKeyBytes.empty()) {
-    metadata.cpu_key = cpuKeyBytes;
-  }
-
-  if (auto cbldvOpt = optionsMgr.get_string("cbldv")) {
-    metadata.cb_ldv =
-        static_cast<uint8_t>(std::strtoul(cbldvOpt->c_str(), nullptr, 0));
-  }
-  if (auto cfldvOpt = optionsMgr.get_string("cfldv")) {
-    metadata.cf_ldv =
-        static_cast<uint8_t>(std::strtoul(cfldvOpt->c_str(), nullptr, 0));
-  }
-  if (auto pdOpt = optionsMgr.get_string("pairing_data")) {
-    auto pdBytes = Utils::hex_string_to_bytes(*pdOpt);
-    if (pdBytes.size() >= 3) {
-      std::copy_n(pdBytes.begin(), 3, metadata.pairing_data);
-    }
-  }
-
-  if (config.customKvPath && std::filesystem::exists(*config.customKvPath)) {
-    if (auto kvData = Utils::read_file(*config.customKvPath)) {
-      metadata.keyvault = std::move(*kvData);
-    }
-  }
-
-  if (progressCb) {
-    progressCb(BuilderProgressInfo{
-        .percentage = 35,
-        .statusMessage = "Resolving INI configuration & bootloaders..."});
-  }
-
-  struct CurrentPathGuard {
-    std::filesystem::path prevPath;
-    CurrentPathGuard(const std::filesystem::path &newPath)
-        : prevPath(std::filesystem::current_path()) {
-      std::error_code ec;
-      std::filesystem::current_path(newPath, ec);
-    }
-    ~CurrentPathGuard() {
-      std::error_code ec;
-      std::filesystem::current_path(prevPath, ec);
-    }
-  } pathGuard(xeDataPath);
-
-  auto iniFiles = FileManager::ReadIniFiles(
-      resolvedVersion, config.imageType, config.consoleModel, fwDir);
-  if (!iniFiles) {
-    return std::unexpected(
-        "Failed to locate or parse INI configuration for '_" +
-        config.imageType + ".ini' (section '[" + config.consoleModel + "]')");
-  }
-
-  Input input{};
-  input.metadata = std::move(metadata);
-  input.bootloaders = std::move(iniFiles->bootloaders);
-  input.flashfs_sec = std::move(iniFiles->flashfs_sec);
-
-  if (config.customSmcPath && std::filesystem::exists(*config.customSmcPath)) {
-    if (auto smcData = Utils::read_file(*config.customSmcPath)) {
-      if (input.flashfs_sec) {
-        bool replaced = false;
-        for (auto &entry : *input.flashfs_sec) {
-          if (entry.first == "smc.bin") {
-            entry.second = *smcData;
-            replaced = true;
-            break;
-          }
-        }
-        if (!replaced) {
-          input.flashfs_sec->push_back({"smc.bin", *smcData});
-        }
-      }
-    }
-  }
-
-  std::string consoleLower = config.consoleModel;
-  std::transform(consoleLower.begin(), consoleLower.end(), consoleLower.begin(),
-                 [](unsigned char c) {
-                   return static_cast<char>(std::tolower(c));
-                 });
-
-  if (consoleLower.find("corona") != std::string::npos &&
-      (consoleLower.find("4g") != std::string::npos ||
-       optionsMgr.get_bool("nandmu").value_or(false))) {
-    input.overrides.ksb_image = true;
-  } else if (consoleLower.find("jasper") != std::string::npos ||
-             consoleLower.find("trinity") != std::string::npos) {
-    input.overrides.psb_image = true;
-  } else {
-    input.overrides.xsb_image = true;
-  }
-
   if (progressCb) {
     progressCb(BuilderProgressInfo{
         .percentage = 60,
         .statusMessage = "Assembling NAND image in-process with gxbuild3..."});
   }
 
-  auto builtImage = GxBuild::RunBuild(input);
+  const auto builtImage = GxBuild::RunBuild(request->input);
   if (!builtImage) {
-    return std::unexpected(
-        "gxbuild3 assembly error: failed to assemble NAND image.");
+    return std::unexpected("gxbuild3 assembly error: " +
+                           builtImage.error().message);
   }
 
-  std::string outPath = config.outputPath;
-  if (outPath.empty()) {
-    QString outDir = QDir(StartupManager::instance().appDataPath())
-                         .filePath(QStringLiteral("output"));
-    QDir().mkpath(outDir);
-    outPath =
-        QDir(outDir).filePath(QStringLiteral("updflash.bin")).toStdString();
+  if (progressCb) {
+    progressCb(BuilderProgressInfo{.percentage = 85,
+                                   .statusMessage = "Writing NAND image..."});
   }
-
-  std::filesystem::path outFsPath(outPath);
-  if (outFsPath.has_parent_path()) {
-    std::filesystem::create_directories(outFsPath.parent_path());
-  }
-
-  if (!Utils::write_file(outFsPath, *builtImage)) {
-    return std::unexpected("Failed to open output file for writing: " + outPath);
+  const auto written = writeOutput(request->output_path, *builtImage);
+  if (!written) {
+    return std::unexpected(written.error());
   }
 
   if (progressCb) {
@@ -585,12 +760,12 @@ GxBuild3Adapter::buildImage(const NandBuildConfig &config,
         .statusMessage = "NAND image assembled natively with gxbuild3!"});
   }
 
-  BuildResult bResult;
-  bResult.success = true;
-  bResult.outputPath = outPath;
-  bResult.logOutput = "Successfully built NAND image: " + outPath + " (" +
-                      std::to_string(builtImage->size()) + " bytes)";
-  return bResult;
+  return BuildResult{.success = true,
+                     .outputPath = request->output_path.string(),
+                     .logOutput = "Successfully built NAND image: " +
+                                  request->output_path.string() + " (" +
+                                  std::to_string(builtImage->size()) +
+                                  " bytes)"};
 }
 
 } 

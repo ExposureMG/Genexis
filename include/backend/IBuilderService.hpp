@@ -11,6 +11,7 @@
 namespace gxapi::backend {
 
 struct NandBuildConfig {
+  bool xellOnly{false};
   std::string version;
   std::string imageType;
   std::string consoleModel;
