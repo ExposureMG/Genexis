@@ -33,6 +33,15 @@ std::string lowercase(std::string_view value) {
   return result;
 }
 
+std::string normalizeConsoleStem(std::string_view value) {
+  std::string stem =
+      lowercase(std::filesystem::path(value).stem().string());
+  if (stem.size() > 2 && stem.ends_with("bl")) {
+    stem.resize(stem.size() - 2);
+  }
+  return stem;
+}
+
 std::string normalizeOptionName(std::string_view value) {
   while (!value.empty() &&
          std::isspace(static_cast<unsigned char>(value.front()))) {
@@ -323,7 +332,10 @@ GxBuild3Adapter::getAvailableConsoles(const std::string &version,
             secLower != QStringLiteral("security") &&
             secLower != QStringLiteral("rawpatch") &&
             secLower != QStringLiteral("flashfs")) {
-          std::string secStr = section.toStdString();
+          std::string secStr = normalizeConsoleStem(section.toStdString());
+          if (secStr.empty()) {
+            continue;
+          }
           if (std::find(consoles.begin(), consoles.end(), secStr) ==
               consoles.end()) {
             consoles.push_back(secStr);
@@ -630,8 +642,7 @@ GxBuild3Adapter::resolveBuildRequest(
                            config.imageType);
   }
 
-  const std::string consoleStem = lowercase(
-      std::filesystem::path(config.consoleModel).stem().string());
+  const std::string consoleStem = normalizeConsoleStem(config.consoleModel);
   const auto imageGeometry = kImageTypeMap.find(consoleStem);
   if (imageGeometry == kImageTypeMap.end()) {
     return std::unexpected("Unsupported gxbuild3 console model: " +
