@@ -203,6 +203,7 @@ Item {
             onClicked: {
                 var config = {
                     "buildType": root.buildType,
+                    "xellOnly": root.buildType === qsTr("XeLL Image"),
                     "buildVersion": root.buildType === qsTr("XeLL Image") ? "" : root.buildVersion,
                     "imageType": root.buildType === qsTr("XeLL Image") ? "" : root.imageType,
                     "hackVersion": root.buildType === qsTr("XeLL Image") ? "" : root.hackVersion,

@@ -352,6 +352,7 @@ Item {
             onClicked: {
                 var config = {
                     "buildType": root.buildType,
+                    "xellOnly": root.isXeLL,
                     "patches": root.activePatches,
                     "options": root.advancedOptions
                 };

@@ -397,6 +397,17 @@ void GxBuild3AdapterTests::normalizesControllerBuildRequests() {
       defaults);
   QVERIFY(xell.xellOnly);
 
+  const auto localizedXell = normalizeNandBuildConfig(
+      {{QStringLiteral("buildType"), QStringLiteral("Imagen XeLL")},
+       {QStringLiteral("xellOnly"), true}},
+      defaults);
+  QVERIFY(localizedXell.xellOnly);
+  const auto localizedNand = normalizeNandBuildConfig(
+      {{QStringLiteral("buildType"), QStringLiteral("Imagen NAND")},
+       {QStringLiteral("xellOnly"), false}},
+      defaults);
+  QVERIFY(!localizedNand.xellOnly);
+
   const auto simple = normalizeNandBuildConfig(
       {{QStringLiteral("buildType"), QStringLiteral("NAND Image")},
        {QStringLiteral("buildVersion"), QStringLiteral("Latest")},
