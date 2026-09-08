@@ -26,6 +26,7 @@ struct NandInfoSnapshot {
   QString smcType;
   QString smcSize;
   QString smcConfigOffset;
+  bool smcDecrypted{false};
   QString cbVersion;
   QString cbAVersion;
   QString cbBVersion;

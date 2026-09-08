@@ -19,7 +19,8 @@ void NandInfoMapperTests::publicInfoMapsGeometryAndBootloaders() {
               .motherboard_name = "Trinity",
               .type_name = "Retail",
               .size = 12288,
-              .present = true};
+              .present = true,
+              .decrypted = true};
   info.bootloaders.cb_a = BootloaderEntryInfo{.name = "CB_A",
                                               .version = 13121,
                                               .size = 0x4000,
@@ -31,6 +32,7 @@ void NandInfoMapperTests::publicInfoMapsGeometryAndBootloaders() {
 
   const auto snapshot = MapPublicNandInfo(info);
 
+  QVERIFY(snapshot.smcDecrypted);
   QCOMPARE(snapshot.imageSize, QStringLiteral("16MB"));
   QCOMPARE(snapshot.blockType, QStringLiteral("New Small Block"));
   QCOMPARE(snapshot.consoleTarget, QStringLiteral("Trinity"));

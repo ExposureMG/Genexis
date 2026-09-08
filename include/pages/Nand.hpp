@@ -159,7 +159,8 @@ Q_SIGNALS:
 
 private:
   void parseNandData(const std::vector<uint8_t> &data);
-  void applySnapshot(const NandInfoSnapshot &snapshot, bool decrypted);
+  void applySnapshot(const NandInfoSnapshot &snapshot, bool decrypted,
+                     bool smcDecrypted);
   NandInfoSnapshot currentSnapshot() const;
 
   bool m_isLoading{false};

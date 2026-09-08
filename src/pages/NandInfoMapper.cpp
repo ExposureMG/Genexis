@@ -97,6 +97,7 @@ NandInfoSnapshot MapPublicNandInfo(const AllNandInfo &info) {
   snapshot.patchSlots = QString::number(info.header_flags);
 
   if (info.smc.present) {
+    snapshot.smcDecrypted = info.smc.decrypted;
     snapshot.smcVersion = QString::fromStdString(info.smc.version);
     snapshot.smcType = QString::fromStdString(info.smc.type_name);
     snapshot.consoleTarget = QString::fromStdString(info.smc.motherboard_name);
