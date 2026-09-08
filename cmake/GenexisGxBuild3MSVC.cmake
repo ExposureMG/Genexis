@@ -68,6 +68,10 @@ target_compile_definitions(stfs PRIVATE _CRT_SECURE_NO_WARNINGS)
 set(GXBUILD3_LIB_SOURCES
     ${GXBUILD3_ROOT}/src/Args.cpp
     ${GXBUILD3_ROOT}/src/BuildRunner.cpp
+    ${GXBUILD3_ROOT}/src/cli/BuildCommand.cpp
+    ${GXBUILD3_ROOT}/src/cli/BuildInputResolver.cpp
+    ${GXBUILD3_ROOT}/src/cli/CommandLine.cpp
+    ${GXBUILD3_ROOT}/src/InputValidator.cpp
     ${GXBUILD3_ROOT}/src/Library.cpp
     ${GXBUILD3_ROOT}/src/ini/IniParser.cpp
     ${GXBUILD3_ROOT}/src/nand/FlashDriver.cpp

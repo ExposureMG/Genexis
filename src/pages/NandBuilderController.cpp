@@ -1,11 +1,11 @@
 #include "pages/NandBuilderController.hpp"
-#include "StartupManager.hpp"
-#include "pages/Nand.hpp"
-#include "backend/BackendManager.hpp"
 
-#include <QDebug>
+#include "NandBuildConfigMapper.hpp"
+#include "StartupManager.hpp"
+#include "backend/BackendManager.hpp"
+#include "pages/Nand.hpp"
+
 #include <QDir>
-#include <QFileInfo>
 #include <thread>
 
 using BackendManager = gxapi::backend::BackendManager;
@@ -324,112 +324,29 @@ void NandBuilderController::buildImage(const QVariantMap &config) {
   Q_EMIT buildStarted();
   Q_EMIT buildProgress(5, QStringLiteral("Validating build parameters..."));
 
-  QVariantMap cfg = config;
+  const QString appDataPath = StartupManager::instance().appDataPath();
+  const QString outputPath =
+      QDir(appDataPath).filePath(QStringLiteral("output/updflash.bin"));
+  const gxapi::pages::detail::NandBuildConfigDefaults defaults{
+      .cpuKeyHex = Nand::instance().cpuKey().trimmed(),
+      .version = getResolvedVersion(),
+      .imageType = getMappedUnderlyingImageType(),
+      .consoleModel = m_selectedConsole,
+      .outputPath = outputPath,
+      .smcSelection = m_selectedSmc,
+      .smcDataRoot =
+          QDir(appDataPath).filePath(QStringLiteral("data/nand/smc"))};
+  const gxapi::backend::NandBuildConfig bConfig =
+      gxapi::pages::detail::normalizeNandBuildConfig(config, defaults);
 
-  QString cpuKeyHex = cfg.value(QStringLiteral("cpuKey")).toString().trimmed();
-  if (cpuKeyHex.isEmpty()) {
-    QVariantMap options = cfg.value(QStringLiteral("options")).toMap();
-    cpuKeyHex = options.value(QStringLiteral("cpuKey")).toString().trimmed();
-  }
-  if (cpuKeyHex.isEmpty()) {
-    cpuKeyHex = Nand::instance().cpuKey().trimmed();
-  }
-
-  if (cpuKeyHex.isEmpty()) {
+  if (!bConfig.xellOnly && bConfig.cpuKeyHex.empty()) {
     QString err = QStringLiteral("CPU key must be provided.");
     Q_EMIT buildProgress(100, err);
     Q_EMIT buildFinished(false, QString(), err);
     return;
   }
 
-  QString imageType = cfg.value(QStringLiteral("imageType")).toString();
-  if (imageType.isEmpty()) {
-    imageType = getMappedUnderlyingImageType();
-  }
-  if (imageType.isEmpty()) {
-    imageType = QStringLiteral("glitch2");
-  }
-
-  QString buildVersion = cfg.value(QStringLiteral("buildVersion")).toString();
-  if (buildVersion.isEmpty()) {
-    buildVersion = cfg.value(QStringLiteral("version")).toString();
-  }
-  if (buildVersion == QStringLiteral("Latest") || buildVersion.isEmpty()) {
-    buildVersion = getResolvedVersion();
-  }
-
-  QString consoleModel = cfg.value(QStringLiteral("consoleModel")).toString();
-  if (consoleModel.isEmpty()) {
-    consoleModel = m_selectedConsole;
-  }
-
-  QString outDirPath = QDir(StartupManager::instance().appDataPath()).filePath(QStringLiteral("output"));
-  QDir().mkpath(outDirPath);
-  QString outputPath = cfg.value(QStringLiteral("outputPath")).toString();
-  if (outputPath.isEmpty()) {
-    outputPath = QDir(outDirPath).filePath(QStringLiteral("updflash.bin"));
-  }
-
-  gxapi::backend::NandBuildConfig bConfig;
-  bConfig.version = buildVersion.toStdString();
-  bConfig.imageType = imageType.toStdString();
-  bConfig.consoleModel = consoleModel.toStdString();
-  bConfig.cpuKeyHex = cpuKeyHex.toStdString();
-  bConfig.outputPath = outputPath.toStdString();
-
-  QString sourceNandPath = cfg.value(QStringLiteral("sourceNandPath")).toString();
-  if (!sourceNandPath.isEmpty()) {
-    bConfig.sourceNandPath = sourceNandPath.toStdString();
-  }
-  QString customKvPath = cfg.value(QStringLiteral("customKvPath")).toString();
-  if (!customKvPath.isEmpty()) {
-    bConfig.customKvPath = customKvPath.toStdString();
-  }
-  QString customSmcPath = cfg.value(QStringLiteral("customSmcPath")).toString();
-  if (customSmcPath.isEmpty()) {
-    QString smcVal = cfg.value(QStringLiteral("smc")).toString();
-    if (smcVal.isEmpty()) smcVal = cfg.value(QStringLiteral("smcFile")).toString();
-    if (smcVal.isEmpty()) smcVal = m_selectedSmc;
-    if (!smcVal.isEmpty()) {
-      if (QFileInfo(smcVal).isAbsolute()) {
-        customSmcPath = smcVal;
-      } else if (!consoleModel.isEmpty()) {
-        customSmcPath = QDir(StartupManager::instance().appDataPath())
-                            .filePath(QStringLiteral("data/nand/smc/") + consoleModel +
-                                      QStringLiteral("/") + smcVal);
-      }
-    }
-  }
-  if (!customSmcPath.isEmpty() && QFileInfo::exists(customSmcPath)) {
-    bConfig.customSmcPath = customSmcPath.toStdString();
-  }
-  QString customSmcConfigPath = cfg.value(QStringLiteral("customSmcConfigPath")).toString();
-  if (!customSmcConfigPath.isEmpty()) {
-    bConfig.customSmcConfigPath = customSmcConfigPath.toStdString();
-  }
-  QString xboxupdPath = cfg.value(QStringLiteral("xboxupdPath")).toString();
-  if (!xboxupdPath.isEmpty()) {
-    bConfig.xboxupdPath = xboxupdPath.toStdString();
-  }
-
-  QVariantList patchesList = cfg.value(QStringLiteral("patches")).toList();
-  for (const auto &p : patchesList) {
-    QString pStr = p.toString().trimmed();
-    if (!pStr.isEmpty()) {
-      bConfig.patches.push_back(pStr.toStdString());
-    }
-  }
-
-  QVariantMap rawOpts = cfg.value(QStringLiteral("options")).toMap();
-  for (auto it = rawOpts.begin(); it != rawOpts.end(); ++it) {
-    if (it.value().toBool()) {
-      bConfig.rawOptions.push_back({it.key().toStdString(), ""});
-    } else if (it.value().typeId() == QMetaType::QString && !it.value().toString().isEmpty()) {
-      bConfig.rawOptions.push_back({it.key().toStdString(), it.value().toString().toStdString()});
-    }
-  }
-
-  std::thread worker([this, bConfig, outputPath]() {
+  std::thread worker([this, bConfig]() {
     auto progressCb = [this](const gxapi::backend::BuilderProgressInfo &info) {
       Q_EMIT buildProgress(info.percentage, QString::fromStdString(info.statusMessage));
     };
@@ -437,7 +354,8 @@ void NandBuilderController::buildImage(const QVariantMap &config) {
     auto res = BackendManager::instance().builder().buildImage(bConfig, progressCb);
     if (res.has_value()) {
       Q_EMIT buildProgress(100, QStringLiteral("NAND image assembled successfully!"));
-      Q_EMIT buildFinished(true, outputPath, QString::fromStdString(res->logOutput));
+      Q_EMIT buildFinished(true, QString::fromStdString(res->outputPath),
+                           QString::fromStdString(res->logOutput));
     } else {
       QString err = QStringLiteral("Build failed: ") + QString::fromStdString(res.error());
       Q_EMIT buildProgress(100, err);

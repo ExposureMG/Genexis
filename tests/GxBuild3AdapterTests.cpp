@@ -1,4 +1,5 @@
 #include "backend/adapters/GxBuild3Adapter.hpp"
+#include "../src/pages/NandBuildConfigMapper.hpp"
 
 #include "BuildRunner.hpp"
 #include "cli/BuildInputResolver.hpp"
@@ -12,8 +13,10 @@
 #include "nand/objects/Keyvault.hpp"
 
 #include <QtTest/QTest>
+#include <QFileInfo>
 #include <QTemporaryDir>
 
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <fstream>
@@ -228,6 +231,8 @@ private slots:
   void resolvesAllConsolesDiscoveredFromVariantSections();
   void resolvesGlitchBuildAndSelectedAddOn();
   void rejectsXellOnlyRequest();
+  void buildImageWritesResolvedOutput();
+  void normalizesControllerBuildRequests();
 
 private:
   std::unique_ptr<QTemporaryDir> m_fixtureDirectory;
@@ -349,6 +354,109 @@ void GxBuild3AdapterTests::rejectsXellOnlyRequest() {
 
   QVERIFY(!result);
   QVERIFY(QString::fromStdString(result.error()).contains("XeLL"));
+}
+
+void GxBuild3AdapterTests::buildImageWritesResolvedOutput() {
+  QTemporaryDir outputDirectory;
+  QVERIFY(outputDirectory.isValid());
+  const auto output =
+      std::filesystem::path(outputDirectory.path().toStdString()) /
+      "nested" / "updflash.bin";
+  GxBuild3Adapter adapter{m_fixtureDirectory->path().toStdString()};
+  NandBuildConfig config{};
+  config.version = std::string(kVersion);
+  config.imageType = "retail";
+  config.consoleModel = "falcon";
+  config.cpuKeyHex = std::string(kCpuKeyHex);
+  config.outputPath = output.string();
+  config.sourceNandPath = m_fixture.donor;
+
+  const auto result = adapter.buildImage(config);
+
+  QVERIFY2(result.has_value(), result ? "" : result.error().c_str());
+  QVERIFY(result->success);
+  QCOMPARE(result->outputPath, output.string());
+  const QFileInfo outputInfo(QString::fromStdString(result->outputPath));
+  QVERIFY(outputInfo.exists());
+  QVERIFY(outputInfo.size() > 0);
+}
+
+void GxBuild3AdapterTests::normalizesControllerBuildRequests() {
+  using gxapi::pages::detail::NandBuildConfigDefaults;
+  using gxapi::pages::detail::normalizeNandBuildConfig;
+
+  const NandBuildConfigDefaults defaults{
+      .cpuKeyHex = QString::fromLatin1(kCpuKeyHex),
+      .version = QStringLiteral("17559"),
+      .imageType = QStringLiteral("glitch2"),
+      .consoleModel = QStringLiteral("falcon"),
+      .outputPath = QStringLiteral("/tmp/genexis-test/updflash.bin")};
+
+  const auto xell = normalizeNandBuildConfig(
+      {{QStringLiteral("buildType"), QStringLiteral("XeLL Image")}},
+      defaults);
+  QVERIFY(xell.xellOnly);
+
+  const auto simple = normalizeNandBuildConfig(
+      {{QStringLiteral("buildType"), QStringLiteral("NAND Image")},
+       {QStringLiteral("buildVersion"), QStringLiteral("Latest")},
+       {QStringLiteral("imageType"), QStringLiteral("FreeBoot")},
+       {QStringLiteral("hackVersion"), QStringLiteral("RGH 2")},
+       {QStringLiteral("patches"),
+        QVariantList{QStringLiteral("launch"), QStringLiteral("xam")}}},
+      defaults);
+  QVERIFY(!simple.xellOnly);
+  QCOMPARE(simple.version, std::string("17559"));
+  QCOMPARE(simple.imageType, std::string("glitch2"));
+  QCOMPARE(simple.consoleModel, std::string("falcon"));
+  QCOMPARE(simple.patches,
+           std::vector<std::string>({"launch", "xam"}));
+
+  const auto advanced = normalizeNandBuildConfig(
+      {{QStringLiteral("buildType"), QStringLiteral("NAND Image")},
+       {QStringLiteral("version"), QStringLiteral("17489")},
+       {QStringLiteral("imageType"), QStringLiteral("retail")},
+       {QStringLiteral("console"), QStringLiteral("zephyr")},
+       {QStringLiteral("options"),
+        QVariantMap{{QStringLiteral("nofcrt"), true},
+                    {QStringLiteral("kvPath"),
+                     QStringLiteral("/tmp/advanced-kv.bin")},
+                    {QStringLiteral("smcPath"),
+                     QStringLiteral("/tmp/advanced-smc.bin")}}}},
+      defaults);
+  QCOMPARE(advanced.version, std::string("17489"));
+  QCOMPARE(advanced.imageType, std::string("retail"));
+  QCOMPARE(advanced.consoleModel, std::string("zephyr"));
+  QCOMPARE(advanced.customKvPath,
+           std::optional<std::filesystem::path>{"/tmp/advanced-kv.bin"});
+  QCOMPARE(advanced.customSmcPath,
+           std::optional<std::filesystem::path>{"/tmp/advanced-smc.bin"});
+  QVERIFY(std::ranges::contains(advanced.rawOptions,
+                               std::pair<std::string, std::string>{"nofcrt", ""}));
+
+  const auto donor = normalizeNandBuildConfig(
+      {{QStringLiteral("mode"), QStringLiteral("donor")},
+       {QStringLiteral("cpuKey"), QString::fromLatin1(kCpuKeyHex)},
+       {QStringLiteral("keyvaultPath"),
+        QStringLiteral("/tmp/donor-kv.bin")},
+       {QStringLiteral("cfLdv"), 4},
+       {QStringLiteral("version"), QStringLiteral("17559")},
+       {QStringLiteral("imageType"), QStringLiteral("retail")},
+       {QStringLiteral("consoleModel"), QStringLiteral("falcon")},
+       {QStringLiteral("options"),
+        QVariantMap{{QStringLiteral("nofcrt"), true}}}},
+      defaults);
+  QCOMPARE(donor.version, std::string("17559"));
+  QCOMPARE(donor.imageType, std::string("retail"));
+  QCOMPARE(donor.consoleModel, std::string("falcon"));
+  QCOMPARE(donor.customKvPath,
+           std::optional<std::filesystem::path>{"/tmp/donor-kv.bin"});
+  QVERIFY(std::ranges::contains(
+      donor.rawOptions,
+      std::pair<std::string, std::string>{"cfldv", "4"}));
+  QVERIFY(std::ranges::contains(
+      donor.rawOptions,
+      std::pair<std::string, std::string>{"nofcrt", ""}));
 }
 
 QTEST_MAIN(GxBuild3AdapterTests)
