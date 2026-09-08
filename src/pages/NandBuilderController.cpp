@@ -6,6 +6,9 @@
 #include "pages/Nand.hpp"
 
 #include <QDir>
+#include <QStringList>
+#include <algorithm>
+#include <string_view>
 #include <thread>
 
 using BackendManager = gxapi::backend::BackendManager;
@@ -333,11 +336,55 @@ void NandBuilderController::buildImage(const QVariantMap &config) {
       .imageType = getMappedUnderlyingImageType(),
       .consoleModel = m_selectedConsole,
       .outputPath = outputPath,
+      .sourceNandPath = Nand::instance().loadedFilePath().trimmed(),
       .smcSelection = m_selectedSmc,
       .smcDataRoot =
           QDir(appDataPath).filePath(QStringLiteral("data/nand/smc"))};
   const gxapi::backend::NandBuildConfig bConfig =
       gxapi::pages::detail::normalizeNandBuildConfig(config, defaults);
+  const bool donorRequest =
+      gxapi::pages::detail::isDonorBuildRequest(config);
+
+  if (!bConfig.xellOnly && !donorRequest && !bConfig.sourceNandPath) {
+    const QString err =
+        QStringLiteral("Load a NAND image before starting a normal build.");
+    Q_EMIT buildProgress(100, err);
+    Q_EMIT buildFinished(false, QString(), err);
+    return;
+  }
+
+  if (donorRequest && !bConfig.sourceNandPath) {
+    const auto hasOption = [&bConfig](std::string_view name) {
+      return std::ranges::any_of(
+          bConfig.rawOptions, [name](const auto &option) {
+            return option.first == name && !option.second.empty();
+          });
+    };
+    QStringList missing;
+    if (!bConfig.customKvPath) {
+      missing.append(QStringLiteral("keyvault"));
+    }
+    if (!bConfig.customSmcPath) {
+      missing.append(QStringLiteral("SMC"));
+    }
+    if (!hasOption("cbldv")) {
+      missing.append(QStringLiteral("CB LDV"));
+    }
+    if (!hasOption("cfldv")) {
+      missing.append(QStringLiteral("CF LDV"));
+    }
+    if (!hasOption("pairing_data")) {
+      missing.append(QStringLiteral("pairing data"));
+    }
+    if (!missing.isEmpty()) {
+      const QString err =
+          QStringLiteral("Loose donor mode requires: %1.")
+              .arg(missing.join(QStringLiteral(", ")));
+      Q_EMIT buildProgress(100, err);
+      Q_EMIT buildFinished(false, QString(), err);
+      return;
+    }
+  }
 
   if (!bConfig.xellOnly && bConfig.cpuKeyHex.empty()) {
     QString err = QStringLiteral("CPU key must be provided.");

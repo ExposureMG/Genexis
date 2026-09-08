@@ -9,7 +9,9 @@ Item {
 
     property alias cpuKey: cpuKeyField.text
     property alias keyvaultPath: kvPathField.text
+    property alias cbLdv: cbLdvSpinBox.value
     property alias cfLdv: cfLdvSpinBox.value
+    property alias pairingData: pairingDataField.text
     property alias version: versionCombo.currentText
     property alias imageType: imageTypeCombo.currentText
     property alias consoleModel: consoleCombo.currentText
@@ -220,12 +222,33 @@ Item {
             }
 
             QQC2.SpinBox {
+                id: cbLdvSpinBox
+                Kirigami.FormData.label: qsTr("CB LDV:")
+                from: 0
+                to: 80
+                value: typeof nandController !== "undefined" && nandController.cbLdv !== "" ? Number(nandController.cbLdv) : 0
+                editable: true
+            }
+
+            QQC2.SpinBox {
                 id: cfLdvSpinBox
                 Kirigami.FormData.label: qsTr("CF LDV:")
                 from: 0
                 to: 80
                 value: 1
                 editable: true
+            }
+
+            QQC2.TextField {
+                id: pairingDataField
+                Kirigami.FormData.label: qsTr("Pairing Data:")
+                Layout.fillWidth: true
+                text: typeof nandController !== "undefined" ? nandController.cbPairing : ""
+                placeholderText: qsTr("3 bytes, for example 0x123456")
+                font.family: "Monospace"
+                validator: RegularExpressionValidator {
+                    regularExpression: /^(0[xX])?[0-9A-Fa-f]{6}$/
+                }
             }
 
             Kirigami.Separator {
@@ -326,9 +349,12 @@ Item {
             onClicked: {
                 var config = {
                     "mode": "donor",
+                    "donorMode": true,
                     "cpuKey": root.cpuKey,
                     "keyvaultPath": root.keyvaultPath,
+                    "cbLdv": root.cbLdv,
                     "cfLdv": root.cfLdv,
+                    "pairingData": root.pairingData,
                     "version": root.version,
                     "imageType": root.imageType,
                     "consoleModel": root.consoleModel,

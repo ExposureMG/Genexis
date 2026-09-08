@@ -94,10 +94,9 @@ NandInfoSnapshot MapPublicNandInfo(const AllNandInfo &info) {
   snapshot.headerMagic = QStringLiteral("0x") +
                          QString::number(info.header_magic, 16).toUpper();
   snapshot.headerVersion = QString::number(info.header_version);
-  snapshot.patchSlots = QString::number(info.header_flags);
 
   if (info.smc.present) {
-    snapshot.smcDecrypted = info.smc.decrypted;
+    snapshot.smcDecrypted = true;
     snapshot.smcVersion = QString::fromStdString(info.smc.version);
     snapshot.smcType = QString::fromStdString(info.smc.type_name);
     snapshot.consoleTarget = QString::fromStdString(info.smc.motherboard_name);
@@ -189,7 +188,6 @@ NandInfoSnapshot MapDecryptedNandInfo(const AllNandInfo &info,
         QStringLiteral("%1")
             .arg(info.keyvault.region_raw, 4, 16, QLatin1Char('0'))
             .toUpper();
-    current.consoleType = QString::number(info.keyvault.kv_type);
     current.kvVersion = QString::number(info.keyvault.kv_type);
     replaceOrAppendKeyvaultCard(current.components, current.serialNumber);
   }

@@ -7,6 +7,8 @@ class NandInfoMapperTests final : public QObject {
 
 private slots:
   void publicInfoMapsGeometryAndBootloaders();
+  void presentSmcKeepsLegacyDetailStateAvailable();
+  void unavailableHeaderAndCertificateFactsStayEmpty();
   void decryptedInfoEnrichesKeyvaultAndLockdownValues();
   void decryptedInfoUsesCbBLockdownValuesForDualCbImages();
   void decryptedInfoReplacesEncryptedKeyvaultCard();
@@ -42,6 +44,35 @@ void NandInfoMapperTests::publicInfoMapsGeometryAndBootloaders() {
   QVERIFY(snapshot.serialNumber.isEmpty());
 }
 
+void NandInfoMapperTests::presentSmcKeepsLegacyDetailStateAvailable() {
+  AllNandInfo info{};
+  info.smc = {.version = "1.02",
+              .motherboard_name = "Trinity",
+              .type_name = "Retail",
+              .size = 12288,
+              .present = true,
+              .decrypted = false};
+
+  const auto snapshot = MapPublicNandInfo(info);
+
+  QVERIFY(snapshot.smcDecrypted);
+  QCOMPARE(snapshot.smcVersion, QStringLiteral("1.02"));
+}
+
+void NandInfoMapperTests::unavailableHeaderAndCertificateFactsStayEmpty() {
+  AllNandInfo info{};
+  info.header_flags = 7;
+  info.keyvault = {.kv_type = 2, .present = true, .decrypted = true};
+
+  auto snapshot = MapPublicNandInfo(info);
+  snapshot = MapDecryptedNandInfo(info, std::move(snapshot));
+
+  QVERIFY(snapshot.patchSlots.isEmpty());
+  QVERIFY(snapshot.smcConfigOffset.isEmpty());
+  QVERIFY(snapshot.cbMagic.isEmpty());
+  QVERIFY(snapshot.consoleType.isEmpty());
+}
+
 void NandInfoMapperTests::decryptedInfoEnrichesKeyvaultAndLockdownValues() {
   AllNandInfo info{};
   info.keyvault = {.serial_number = "123456789012",
@@ -65,7 +96,8 @@ void NandInfoMapperTests::decryptedInfoEnrichesKeyvaultAndLockdownValues() {
   QCOMPARE(snapshot.dvdKey, QStringLiteral("00112233445566778899AABBCCDDEEFF"));
   QCOMPARE(snapshot.consoleId, QStringLiteral("A1B2C3D4E5"));
   QCOMPARE(snapshot.gameRegion, QStringLiteral("0x02FE"));
-  QCOMPARE(snapshot.consoleType, QStringLiteral("2"));
+  QVERIFY(snapshot.consoleType.isEmpty());
+  QCOMPARE(snapshot.kvVersion, QStringLiteral("2"));
   QCOMPARE(snapshot.cbLdv, QStringLiteral("5"));
   QCOMPARE(snapshot.cbALdv, QStringLiteral("5"));
   QCOMPARE(snapshot.cbPairing, QStringLiteral("0x123456"));

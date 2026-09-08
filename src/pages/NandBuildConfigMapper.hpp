@@ -20,9 +20,18 @@ struct NandBuildConfigDefaults {
   QString imageType;
   QString consoleModel;
   QString outputPath;
+  QString sourceNandPath;
   QString smcSelection;
   QString smcDataRoot;
 };
+
+inline bool isDonorBuildRequest(const QVariantMap &values) {
+  return values.value(QStringLiteral("donorMode")).toBool() ||
+         values.value(QStringLiteral("mode"))
+                 .toString()
+                 .trimmed()
+                 .compare(QStringLiteral("donor"), Qt::CaseInsensitive) == 0;
+}
 
 inline QString firstNonEmpty(const QVariantMap &values,
                              std::initializer_list<QString> keys) {
@@ -96,6 +105,9 @@ normalizeNandBuildConfig(const QVariantMap &values,
   setOptionalPath(
       result.sourceNandPath,
       values.value(QStringLiteral("sourceNandPath")).toString().trimmed());
+  if (!result.sourceNandPath && !isDonorBuildRequest(values)) {
+    setOptionalPath(result.sourceNandPath, defaults.sourceNandPath.trimmed());
+  }
 
   QString customKvPath = firstNonEmpty(
       values, {QStringLiteral("customKvPath"), QStringLiteral("keyvaultPath")});
@@ -159,6 +171,16 @@ normalizeNandBuildConfig(const QVariantMap &values,
     result.rawOptions.emplace_back(
         "cfldv",
         values.value(QStringLiteral("cfLdv")).toString().toStdString());
+  }
+  if (values.contains(QStringLiteral("cbLdv"))) {
+    result.rawOptions.emplace_back(
+        "cbldv",
+        values.value(QStringLiteral("cbLdv")).toString().toStdString());
+  }
+  const QString pairingData = firstNonEmpty(
+      values, {QStringLiteral("pairingData"), QStringLiteral("pairing_data")});
+  if (!pairingData.isEmpty()) {
+    result.rawOptions.emplace_back("pairing_data", pairingData.toStdString());
   }
   for (auto it = options.cbegin(); it != options.cend(); ++it) {
     if (it.key() == QStringLiteral("cpuKey") ||

@@ -3,7 +3,6 @@
 #include "Library.hpp"
 #include "cli/BuildArgs.hpp"
 #include "cli/BuildInputResolver.hpp"
-#include "nand/objects/Keyvault.hpp"
 
 #include <QDir>
 #include <QFile>
@@ -75,28 +74,15 @@ bool isRecognizedUiOption(std::string_view name) {
   return recognized.contains(std::string(name));
 }
 
-std::expected<std::string, std::string>
-normalizeCpuKey(std::string_view value) {
+std::string normalizeCpuKey(std::string_view value) {
   std::string compact;
   compact.reserve(value.size());
   for (const unsigned char character : value) {
     if (!std::isspace(character)) {
-      compact.push_back(static_cast<char>(character));
+      compact.push_back(static_cast<char>(std::toupper(character)));
     }
   }
-  const auto validated = gxbuild3::NAND::validate_cpu_key_hex(compact);
-  if (validated.status == gxbuild3::NAND::CpuKeyStatus::Invalid) {
-    return std::unexpected(validated.message);
-  }
-
-  static constexpr std::string_view hex = "0123456789ABCDEF";
-  std::string normalized;
-  normalized.reserve(validated.key.size() * 2);
-  for (const uint8_t byte : validated.key) {
-    normalized.push_back(hex[byte >> 4]);
-    normalized.push_back(hex[byte & 0x0f]);
-  }
-  return normalized;
+  return compact;
 }
 
 std::expected<void, std::string>
@@ -695,11 +681,7 @@ GxBuild3Adapter::resolveBuildRequest(
                          : std::filesystem::path(config.outputPath);
 
   if (!config.cpuKeyHex.empty()) {
-    const auto cpuKey = normalizeCpuKey(config.cpuKeyHex);
-    if (!cpuKey) {
-      return std::unexpected("Invalid CPU key: " + cpuKey.error());
-    }
-    args.cpu_key = *cpuKey;
+    args.cpu_key = normalizeCpuKey(config.cpuKeyHex);
   }
 
   args.config.reserve(config.rawOptions.size());

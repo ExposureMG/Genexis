@@ -1,8 +1,8 @@
 #include "pages/Nand.hpp"
 
 #include "Library.hpp"
-#include "nand/objects/Keyvault.hpp"
 
+#include <QByteArray>
 #include <QDebug>
 #include <QDir>
 #include <QFile>
@@ -216,7 +216,7 @@ void Nand::parseNandData(const std::vector<uint8_t> &data) {
     qDebug() << "[Nand] Invalid NAND image format or header.";
     return;
   }
-  applySnapshot(MapPublicNandInfo(*info), false, info->smc.decrypted);
+  applySnapshot(MapPublicNandInfo(*info), false);
 }
 
 void Nand::setCpuKey(const QString &cpuKey) {
@@ -228,8 +228,7 @@ void Nand::setCpuKey(const QString &cpuKey) {
   const auto restorePublicSnapshot = [this]() {
     const auto publicInfo = GxBuild::ExtractSomeInfo(m_rawNandData);
     if (publicInfo) {
-      applySnapshot(MapPublicNandInfo(*publicInfo), false,
-                    publicInfo->smc.decrypted);
+      applySnapshot(MapPublicNandInfo(*publicInfo), false);
       return;
     }
     m_isCpuKeyLoaded = false;
@@ -240,31 +239,24 @@ void Nand::setCpuKey(const QString &cpuKey) {
     return;
   }
 
-  const auto validation = validate_cpu_key_hex(m_cpuKey.toStdString());
-  if (validation.status != CpuKeyStatus::Valid) {
-    qDebug() << "[Nand] Invalid CPU key checksum.";
-    restorePublicSnapshot();
-    return;
-  }
-
   if (m_rawNandData.empty()) {
     restorePublicSnapshot();
     return;
   }
 
-  const auto info = GxBuild::ExtractAllInfo(m_rawNandData, validation.key);
+  const QByteArray decodedKey = QByteArray::fromHex(m_cpuKey.toLatin1());
+  const std::vector<uint8_t> keyBytes(decodedKey.cbegin(), decodedKey.cend());
+  const auto info = GxBuild::ExtractAllInfo(m_rawNandData, keyBytes);
   if (!info) {
     qDebug() << "[Nand] Keyvault decryption failed.";
     restorePublicSnapshot();
     return;
   }
 
-  applySnapshot(MapDecryptedNandInfo(*info, currentSnapshot()), true,
-                info->smc.decrypted);
+  applySnapshot(MapDecryptedNandInfo(*info, currentSnapshot()), true);
 }
 
-void Nand::applySnapshot(const NandInfoSnapshot &snapshot, bool decrypted,
-                         bool smcDecrypted) {
+void Nand::applySnapshot(const NandInfoSnapshot &snapshot, bool decrypted) {
   m_imageSize = snapshot.imageSize;
   m_blockType = snapshot.blockType;
   m_consoleTarget = snapshot.consoleTarget;
@@ -309,7 +301,7 @@ void Nand::applySnapshot(const NandInfoSnapshot &snapshot, bool decrypted,
 
   m_isNandLoaded = true;
   m_isCpuKeyLoaded = decrypted;
-  m_isSmcDecrypted = smcDecrypted;
+  m_isSmcDecrypted = snapshot.smcDecrypted;
 
   Q_EMIT nandStateChanged();
   Q_EMIT cpuKeyStateChanged();

@@ -353,6 +353,7 @@ Item {
                 var config = {
                     "buildType": root.buildType,
                     "xellOnly": root.isXeLL,
+                    "donorMode": root.buildType === qsTr("Donor"),
                     "patches": root.activePatches,
                     "options": root.advancedOptions
                 };
