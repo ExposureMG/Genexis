@@ -36,10 +36,15 @@ std::string lowercase(std::string_view value) {
 std::string normalizeConsoleStem(std::string_view value) {
   std::string stem =
       lowercase(std::filesystem::path(value).stem().string());
-  if (stem.size() > 2 && stem.ends_with("bl")) {
-    stem.resize(stem.size() - 2);
+  const auto marker = stem.find("bl");
+  if (marker != std::string::npos && marker > 0 &&
+      (marker + 2 == stem.size() || stem[marker + 2] == '_')) {
+    const std::string motherboard = stem.substr(0, marker);
+    if (kImageTypeMap.contains(motherboard)) {
+      return motherboard;
+    }
   }
-  return stem;
+  return kImageTypeMap.contains(stem) ? stem : std::string{};
 }
 
 std::string normalizeOptionName(std::string_view value) {
@@ -311,6 +316,7 @@ std::vector<std::string>
 GxBuild3Adapter::getAvailableConsoles(const std::string &version,
                                       const std::string &imageType) {
   std::vector<std::string> consoles;
+  std::vector<std::string> sections;
   if (version.empty() || imageType.empty())
     return consoles;
 
@@ -332,18 +338,24 @@ GxBuild3Adapter::getAvailableConsoles(const std::string &version,
             secLower != QStringLiteral("security") &&
             secLower != QStringLiteral("rawpatch") &&
             secLower != QStringLiteral("flashfs")) {
-          std::string secStr = normalizeConsoleStem(section.toStdString());
-          if (secStr.empty()) {
-            continue;
-          }
-          if (std::find(consoles.begin(), consoles.end(), secStr) ==
-              consoles.end()) {
-            consoles.push_back(secStr);
-          }
+          sections.push_back(secLower.toStdString());
         }
       }
     }
     iniFile.close();
+  }
+
+  const std::unordered_set<std::string> availableSections(sections.begin(),
+                                                          sections.end());
+  for (const auto &section : sections) {
+    const std::string console = normalizeConsoleStem(section);
+    if (console.empty() ||
+        !availableSections.contains(console + "bl") ||
+        std::find(consoles.begin(), consoles.end(), console) !=
+            consoles.end()) {
+      continue;
+    }
+    consoles.push_back(console);
   }
 
   return consoles;

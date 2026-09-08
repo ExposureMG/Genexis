@@ -178,9 +178,16 @@ std::optional<FixturePaths> createFixture(const std::filesystem::path &root) {
     return std::nullopt;
   }
 
-  constexpr std::string_view ini =
-      "[falconbl]\ncb_1.bin\nsc.bin\ncd.bin\nce.bin\ncf_1.bin\n"
-      "cg_1.bin\ncf_2.bin\ncg_2.bin\n";
+  constexpr std::string_view bootloaderEntries =
+      "cb_1.bin\nsc.bin\ncd.bin\nce.bin\ncf_1.bin\ncg_1.bin\n"
+      "cf_2.bin\ncg_2.bin\n";
+  std::string ini;
+  for (const std::string_view section : {
+           "falconbl", "xenonbl", "xenonbl_1928", "zephyrbl",
+           "zephyrbl_4572", "coronabl", "coronabl_WB", "mysterybl_1"}) {
+    ini += "[" + std::string(section) + "]\n";
+    ini += bootloaderEntries;
+  }
   const Bytes kv = keyvault_encrypt(kCpuKey, Bytes(Keyvault::kSize, 0x35));
   Bytes smc(0x300, 0x44);
   smc[0x100] = 0x10;
@@ -218,7 +225,7 @@ class GxBuild3AdapterTests final : public QObject {
 private slots:
   void initTestCase();
   void resolvesDonorRetailBuildWithExplicitCpuKey();
-  void resolvesConsoleDiscoveredFromBuildIni();
+  void resolvesAllConsolesDiscoveredFromVariantSections();
   void resolvesGlitchBuildAndSelectedAddOn();
   void rejectsXellOnlyRequest();
 
@@ -272,7 +279,7 @@ void GxBuild3AdapterTests::resolvesDonorRetailBuildWithExplicitCpuKey() {
   QVERIFY(std::filesystem::is_regular_file(stagingRoot / "smc.bin"));
 }
 
-void GxBuild3AdapterTests::resolvesConsoleDiscoveredFromBuildIni() {
+void GxBuild3AdapterTests::resolvesAllConsolesDiscoveredFromVariantSections() {
   QTemporaryDir staging;
   QVERIFY(staging.isValid());
   const auto stagingRoot =
@@ -281,19 +288,23 @@ void GxBuild3AdapterTests::resolvesConsoleDiscoveredFromBuildIni() {
   const auto consoles =
       adapter.getAvailableConsoles(std::string(kVersion), "retail");
   QVERIFY(!consoles.empty());
+  QCOMPARE(consoles.size(), size_t{4});
 
-  NandBuildConfig config{};
-  config.version = std::string(kVersion);
-  config.imageType = "retail";
-  config.consoleModel = consoles.front();
-  config.cpuKeyHex = std::string(kCpuKeyHex);
-  config.outputPath = (stagingRoot / "updflash.bin").string();
-  config.sourceNandPath = m_fixture.donor;
+  for (const auto &console : consoles) {
+    QVERIFY2(kImageTypeMap.contains(console), console.c_str());
+    NandBuildConfig config{};
+    config.version = std::string(kVersion);
+    config.imageType = "retail";
+    config.consoleModel = console;
+    config.cpuKeyHex = std::string(kCpuKeyHex);
+    config.outputPath = (stagingRoot / console / "updflash.bin").string();
+    config.sourceNandPath = m_fixture.donor;
 
-  const auto request = adapter.resolveBuildRequest(config, stagingRoot);
+    const auto request =
+        adapter.resolveBuildRequest(config, stagingRoot / console);
 
-  QVERIFY2(request.has_value(), request ? "" : request.error().c_str());
-  QCOMPARE(request->input.image_type, ImageType::SmallBlock);
+    QVERIFY2(request.has_value(), request ? "" : request.error().c_str());
+  }
 }
 
 void GxBuild3AdapterTests::resolvesGlitchBuildAndSelectedAddOn() {
