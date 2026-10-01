@@ -194,6 +194,8 @@ void Flasher::detectHardware(const QString &filePath) {
       } else {
         
         gxapi::backend::JtagDeviceConfig jConfig;
+        if (devProfile.has_value())
+          jConfig.backend = devProfile->jtagProbe;
         auto scanRes =
             BackendManager::instance().jtagForHardware(hwTarget).scanChain(
                 jConfig);
@@ -343,6 +345,8 @@ void Flasher::performOperation(const QString &filePath,
 
     if (isJtag) {
       gxapi::backend::JtagDeviceConfig jConfig;
+      if (auto jtagDev = gxapi::backend::findDeviceByName(hwTarget))
+        jConfig.backend = jtagDev->jtagProbe;
       auto progCbJtag = [this](const gxapi::backend::JtagProgressInfo &p) {
         QMetaObject::invokeMethod(
             this,
@@ -379,7 +383,7 @@ void Flasher::performOperation(const QString &filePath,
         bool verify = options.value(QStringLiteral("verify"), true).toBool();
         auto res =
             BackendManager::instance().flashForHardware(hwTarget).writeNand(
-                cleanPath.toStdString(), 0, verify, false, fConfig, progressCb);
+                cleanPath.toStdString(), 0, true, verify, fConfig, progressCb);
         success = res.has_value();
         finishMsg = success ? QStringLiteral("NAND write complete!")
                             : QString::fromStdString(res.error());
