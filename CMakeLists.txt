@@ -117,14 +117,14 @@ else()
     set(NANDPROMAX_LIB ${NANDPROMAX_BUILD_DIR}/libnandpromax.a)
 endif()
 
-add_custom_command(
-    OUTPUT ${NANDPROMAX_LIB}
+# Always invoke cargo (a no-op when nothing changed) so updating the submodule
+# rebuilds the library instead of linking a stale one.
+add_custom_target(nandpromax_target ALL
     COMMAND cargo build ${CARGO_BUILD_FLAG}
     WORKING_DIRECTORY ${NANDPROMAX_DIR}
+    BYPRODUCTS ${NANDPROMAX_LIB}
     COMMENT "Building NandProMax static library via Cargo..."
 )
-
-add_custom_target(nandpromax_target DEPENDS ${NANDPROMAX_LIB})
 add_library(nandpromax_lib STATIC IMPORTED GLOBAL)
 add_dependencies(nandpromax_lib nandpromax_target)
 set_target_properties(nandpromax_lib PROPERTIES IMPORTED_LOCATION ${NANDPROMAX_LIB})
@@ -298,7 +298,10 @@ elseif(APPLE)
         "-framework CoreFoundation"
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(genexis PRIVATE pthread dl m)
+    # libnandpromax (Rust staticlib) needs libudev (serialport) and libusb (rusb)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(NANDPROMAX_SYSLIBS REQUIRED IMPORTED_TARGET libudev libusb-1.0)
+    target_link_libraries(genexis PRIVATE PkgConfig::NANDPROMAX_SYSLIBS pthread dl m rt util)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
