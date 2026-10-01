@@ -84,12 +84,16 @@ endif()
 
 set(BUILD_SHARED_LIBS OFF)
 
+# gxbuild3 adds its bundled spdlog unconditionally. Configure it first so
+# UpdClient reuses that target instead of fetching a second copy.
+if(NOT MSVC)
+    add_subdirectory(extern/gxbuild3)
+endif()
+
 add_subdirectory(extern/UpdClient)
 
 if(MSVC)
     include(cmake/GenexisGxBuild3MSVC.cmake)
-else()
-    add_subdirectory(extern/gxbuild3)
 endif()
 
 
