@@ -70,20 +70,20 @@ CMake is pre-configured but dependencies are required. KDE Builder will do every
 
 Ubuntu-based
 ```bash	
-sudo apt install build-essential cmake extra-cmake-modules libkirigami-dev libkf6i18n-dev libkf6coreaddons-dev libkf6iconthemes-dev qt6-base-dev qt6-declarative-dev libkf6qqc2desktopstyle-dev
+sudo apt install build-essential cmake extra-cmake-modules libkirigami-dev libkf6i18n-dev libkf6coreaddons-dev libkf6iconthemes-dev qt6-base-dev qt6-declarative-dev libkf6qqc2desktopstyle-dev libftdi1-dev pkg-config
 ```
 
 Arch-based
 ```bash
-sudo pacman -S base-devel extra-cmake-modules cmake kirigami ki18n kcoreaddons breeze kiconthemes qt6-base qt6-declarative qqc2-desktop-style
+sudo pacman -S base-devel extra-cmake-modules cmake kirigami ki18n kcoreaddons breeze kiconthemes qt6-base qt6-declarative qqc2-desktop-style libftdi pkgconf
 ```
 
 OpenSUSE
 ```bash
-sudo zypper install cmake kf6-extra-cmake-modules kf6-kirigami-devel kf6-ki18n-devel kf6-kcoreaddons-devel kf6-kiconthemes-devel qt6-base-devel qt6-declarative-devel qt6-quickcontrols2-devel kf6-qqc2-desktop-style
+sudo zypper install cmake kf6-extra-cmake-modules kf6-kirigami-devel kf6-ki18n-devel kf6-kcoreaddons-devel kf6-kiconthemes-devel qt6-base-devel qt6-declarative-devel qt6-quickcontrols2-devel kf6-qqc2-desktop-style libftdi1-devel pkg-config
 ```
 
 Fedora
 ```bash
-sudo dnf install @development-tools @development-libs cmake extra-cmake-modules kf6-kirigami-devel kf6-ki18n-devel kf6-kcoreaddons-devel kf6-kiconthemes-devel qt6-qtbase-devel qt6-qtdeclarative-devel kf6-qqc2-desktop-style
+sudo dnf install @development-tools @development-libs cmake extra-cmake-modules kf6-kirigami-devel kf6-ki18n-devel kf6-kcoreaddons-devel kf6-kiconthemes-devel qt6-qtbase-devel qt6-qtdeclarative-devel kf6-qqc2-desktop-style libftdi-devel pkgconf-pkg-config
 ```

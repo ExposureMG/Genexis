@@ -14,4 +14,4 @@
 [submodule "extern/FTDI2SPI"]
 	path = extern/FTDI2SPI
 	url = https://github.com/ExposureMG/FTDI2SPI.git
-	branch = multi-backend
+	branch = libftdi

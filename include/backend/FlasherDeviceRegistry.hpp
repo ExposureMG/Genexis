@@ -13,6 +13,8 @@ struct FlasherDeviceProfile {
   std::string imageResource;
   std::string flashBackendName{};
   std::string jtagBackendName{};
+  // xsvftool probe: "FTDI" or "DirtyJTAG". Only used by the xsvftool backend.
+  std::string jtagProbe{};
   std::vector<std::pair<uint16_t, uint16_t>> vidPidList{};
   std::vector<uint16_t> vidOnlyList{};
 };
@@ -29,6 +31,7 @@ inline const std::vector<FlasherDeviceProfile> KnownFlasherDevices = {
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/xflasher.png",
      .flashBackendName = "FTDI2SPI",
      .jtagBackendName = "xsvftool",
+     .jtagProbe = "FTDI",
      .vidPidList = {{0x0403, 0x6001},
                     {0x0403, 0x6010},
                     {0x0403, 0x6011},
@@ -52,6 +55,7 @@ inline const std::vector<FlasherDeviceProfile> KnownFlasherDevices = {
     {.displayName = "Pico-DirtyJTAG",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/pico-djtag.png",
      .jtagBackendName = "xsvftool",
+     .jtagProbe = "DirtyJTAG",
      .vidPidList = {{0x1209, 0xC0CA}},
      .vidOnlyList = {}}};
 
