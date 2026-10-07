@@ -1,0 +1,6 @@
+# Matches the existing C++ sources (LLVM style: 2-space indent, 80 columns,
+# attached braces). Format only the lines you touch, e.g. git clang-format.
+---
+Language: Cpp
+BasedOnStyle: LLVM
+...

@@ -74,12 +74,7 @@ InputBootloaders validBootloaders() {
   sc.header.header.size = static_cast<uint32_t>(sizeof(sc_header) + 0x20);
   sc.data.assign(0x20, 0x53);
   sc.decrypted = true;
-  auto cbForScKey = cb;
-  cbForScKey.encrypt(key_1bl);
-  if (!cbForScKey.derived_key) {
-    return {};
-  }
-  sc.encrypt(cbForScKey.derived_key->data());
+  sc.encrypt(BootloaderSc::kZeroSecret);
 
   BootloaderCd cd{};
   cd.header.header.magic = NANDBootloaderMagic::CD;
@@ -100,10 +95,15 @@ InputBootloaders validBootloaders() {
     BootloaderCf cf{};
     cf.header.header.magic = NANDBootloaderMagic::CF;
     cf.header.header.version = version;
-    cf.header.header.size = static_cast<uint32_t>(sizeof(cf_header) + 0x200);
-    std::fill(std::begin(cf.header.cg_key), std::end(cf.header.cg_key), marker);
-    cf.data.assign(0x200, 0);
+    cf.header.header.size = static_cast<uint32_t>(sizeof(cf_header) + 0x340);
+    std::fill(std::begin(cf.header.fixpoint_nonce),
+              std::end(cf.header.fixpoint_nonce), marker);
+    cf.data.assign(0x340, 0);
     cf.data[2] = marker;
+    // The 7BL nonce at payload +0x300 (serialized +0x330) keys the CG; keep it
+    // distinct from the header fixpoint so the fixture uses the real source.
+    std::fill(cf.data.begin() + 0x300, cf.data.begin() + 0x310,
+              static_cast<uint8_t>(marker ^ 0xFF));
     cf.decrypted = true;
     return cf;
   };
@@ -120,10 +120,10 @@ InputBootloaders validBootloaders() {
 
   auto cf0 = makeCf(5, 0x50);
   auto cg0 = makeCg(6, 0x60);
-  cg0.encrypt(cf0.header.cg_key);
+  cg0.encrypt(cf0.data.data() + 0x300);
   auto cf1 = makeCf(7, 0x70);
   auto cg1 = makeCg(8, 0x80);
-  cg1.encrypt(cf1.header.cg_key);
+  cg1.encrypt(cf1.data.data() + 0x300);
 
   InputBootloaders bootloaders{};
   bootloaders.cb_or_a = cb.serialize();
@@ -210,6 +210,7 @@ std::optional<FixturePaths> createFixture(const std::filesystem::path &root) {
       !writeBytes(data / "cg_1.bin", *bootloaders.cg0) ||
       !writeBytes(data / "cf_2.bin", *bootloaders.cf1) ||
       !writeBytes(data / "cg_2.bin", *bootloaders.cg1) ||
+      !writeBytes(data / "xell-gggggg.bin", Bytes(0x40000, 0x58)) ||
       !writeText(version / "_retail.ini", ini) ||
       !writeText(version / "_glitch2.ini", ini) ||
       !writeBytes(versionBin / "patches_g2falcon.bin", automaticPatch) ||
@@ -225,7 +226,7 @@ std::optional<FixturePaths> createFixture(const std::filesystem::path &root) {
 class GxBuild3AdapterTests final : public QObject {
   Q_OBJECT
 
-private slots:
+private Q_SLOTS:
   void initTestCase();
   void resolvesDonorRetailBuildWithExplicitCpuKey();
   void resolvesAllConsolesDiscoveredFromVariantSections();
@@ -360,7 +361,7 @@ void GxBuild3AdapterTests::rejectsInvalidCpuKeyThroughResolver() {
       config, std::filesystem::path(staging.path().toStdString()) / "bad-key");
 
   QVERIFY(!result);
-  QVERIFY(QString::fromStdString(result.error()).contains("CPU key"));
+  QVERIFY(QString::fromStdString(result.error()).contains(QStringLiteral("CPU key")));
 }
 
 void GxBuild3AdapterTests::rejectsXellOnlyRequest() {
@@ -374,7 +375,7 @@ void GxBuild3AdapterTests::rejectsXellOnlyRequest() {
       config, std::filesystem::path(staging.path().toStdString()) / "xell");
 
   QVERIFY(!result);
-  QVERIFY(QString::fromStdString(result.error()).contains("XeLL"));
+  QVERIFY(QString::fromStdString(result.error()).contains(QStringLiteral("XeLL")));
 }
 
 void GxBuild3AdapterTests::buildImageWritesResolvedOutput() {
