@@ -10,11 +10,11 @@ Item {
     property string buildLogText: ""
 
     Connections {
-        target: typeof nandBuilderController !== "undefined" ? nandBuilderController : null
+        target: nandBuilderController
 
         function onBuildStarted() {
             var timestamp = new Date().toLocaleTimeString();
-            var initMsg = "[" + timestamp + "] Initiating NAND build operation...\n";
+            var initMsg = qsTr("[%1] Initiating NAND build operation...").arg(timestamp) + "\n";
             root.buildLogText = initMsg;
             var appWin = root.Window ? root.Window.window : null;
             if (appWin && typeof appWin.showConsole === "function") {
@@ -39,12 +39,12 @@ Item {
         function onBuildFinished(success, outputPath, logOutput) {
             var endLog = "";
             if (logOutput && logOutput.length > 0) {
-                endLog += "\n--- Builder Log Output ---\n" + logOutput + "\n";
+                endLog += "\n" + qsTr("--- Builder Log Output ---") + "\n" + logOutput + "\n";
             }
             if (success) {
-                endLog += "\n[SUCCESS] NAND Image created successfully: " + outputPath + "\n";
+                endLog += "\n" + qsTr("[SUCCESS] NAND Image created successfully: %1").arg(outputPath) + "\n";
             } else {
-                endLog += "\n[ERROR] NAND Image creation failed.\n";
+                endLog += "\n" + qsTr("[ERROR] NAND Image creation failed.") + "\n";
             }
             root.buildLogText += endLog;
 
@@ -104,8 +104,6 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             sourceComponent: {
-                if (root.currentTabIndex === 0)
-                    return simpleComponent;
                 if (root.currentTabIndex === 1)
                     return advancedComponent;
                 if (root.currentTabIndex === 2)
@@ -115,36 +113,26 @@ Item {
         }
     }
 
+    Connections {
+        target: builderLoader.item
+
+        function onBuildRequested(config) {
+            nandBuilderController.buildImage(config);
+        }
+    }
+
     Component {
         id: simpleComponent
-        NandBuilderSimple {
-            onBuildRequested: function (config) {
-                if (typeof nandBuilderController !== "undefined") {
-                    nandBuilderController.buildImage(config);
-                }
-            }
-        }
+        NandBuilderSimple {}
     }
 
     Component {
         id: advancedComponent
-        NandBuilderAdvanced {
-            onBuildRequested: function (config) {
-                if (typeof nandBuilderController !== "undefined") {
-                    nandBuilderController.buildImage(config);
-                }
-            }
-        }
+        NandBuilderAdvanced {}
     }
 
     Component {
         id: donorComponent
-        NandBuilderDonor {
-            onBuildRequested: function (config) {
-                if (typeof nandBuilderController !== "undefined") {
-                    nandBuilderController.buildImage(config);
-                }
-            }
-        }
+        NandBuilderDonor {}
     }
 }

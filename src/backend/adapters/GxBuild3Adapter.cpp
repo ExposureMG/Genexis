@@ -65,12 +65,12 @@ bool isRecognizedUiOption(std::string_view name) {
       "cygnos",      "demon",       "olddvd",       "nodvd",
       "nomobile",    "nofcrt",      "noremap",      "noecdremap",
       "nandmu",      "nosecurity",  "nosusecurity", "smcnocheck",
-      "nochecksmc",  "noblpatch",   "cbldv",        "pairing_data",
-      "pairingdata", "pd",          "cfldv",        "xellbutton",
-      "xellbutton2", "dualboot",    "cputemp",      "gputemp",
-      "edramtemp",   "overcputemp", "overgputemp",  "overedramtemp",
-      "cpufan",      "gpufan",      "dvdkey",       "avregion",
-      "gameregion",  "dvdregion",   "macid"};
+      "nochecksmc",  "noblpatch",   "nopatch",      "cbldv",
+      "pairing_data", "pairingdata", "pd",          "cfldv",
+      "xellbutton",  "xellbutton2", "dualboot",     "cputemp",
+      "gputemp",     "edramtemp",   "overcputemp",  "overgputemp",
+      "overedramtemp", "cpufan",    "gpufan",       "dvdkey",
+      "avregion",    "gameregion",  "dvdregion",    "macid"};
   return recognized.contains(std::string(name));
 }
 
@@ -670,6 +670,10 @@ GxBuild3Adapter::resolveBuildRequest(
   args.build_ini = std::filesystem::path(version) /
                    ("_" + imageType + ".ini");
   args.section = consoleStem;
+  if (const auto console = kConsoleTypeMap.find(consoleStem);
+      console != kConsoleTypeMap.end()) {
+    args.console = console->second;
+  }
   args.build_type = buildType->second;
   args.image_type = imageGeometry->second;
   args.source_dirs = {stagingRoot, getXeBuildDataPath() / "data",
@@ -773,4 +777,4 @@ GxBuild3Adapter::buildImage(const NandBuildConfig &config,
                                   " bytes)"};
 }
 
-} 
+} // namespace gxapi::backend

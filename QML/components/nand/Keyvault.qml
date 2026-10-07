@@ -8,8 +8,12 @@ Kirigami.ScrollablePage {
 
     title: qsTr("Keyvault")
 
-    enabled: typeof nandController !== "undefined" && nandController.isNandLoaded && nandController.isCpuKeyLoaded
+    enabled: nandController.isNandLoaded && nandController.isCpuKeyLoaded
     opacity: enabled ? 1.0 : 0.45
+
+    NandMetadata {
+        id: nand
+    }
 
     QQC2.ToolTip {
         id: copyToolTip
@@ -54,18 +58,17 @@ Kirigami.ScrollablePage {
 
         Kirigami.FormLayout {
             Layout.fillWidth: true
-            Layout.alignment: Q
+            Layout.alignment: Qt.AlignHCenter
+
             RowLayout {
                 Kirigami.FormData.label: qsTr("Serial Number:")
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.smallSpacing
 
-                QQC2.TextField {
-                    text: typeof nandController !== "undefined" ? nandController.serialNumber : ""
+                InfoField {
+                    text: nand.serialNumber
                     placeholderText: qsTr("Encrypted")
-                    readOnly: true
                     font.family: "Monospace"
-                    Layout.fillWidth: true
                 }
 
                 QQC2.Button {
@@ -73,7 +76,7 @@ Kirigami.ScrollablePage {
                     icon.name: "edit-copy-symbolic"
                     display: QQC2.AbstractButton.IconOnly
                     enabled: root.enabled
-                    onClicked: root.copyToClipboard(nandController.serialNumber, qsTr("Serial Number"), copySerialBtn)
+                    onClicked: root.copyToClipboard(nand.serialNumber, qsTr("Serial Number"), copySerialBtn)
                     QQC2.ToolTip.text: qsTr("Copy Serial Number")
                     QQC2.ToolTip.visible: hovered
                 }
@@ -84,12 +87,10 @@ Kirigami.ScrollablePage {
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.smallSpacing
 
-                QQC2.TextField {
-                    text: typeof nandController !== "undefined" ? nandController.consoleId : ""
+                InfoField {
+                    text: nand.consoleId
                     placeholderText: qsTr("Encrypted")
-                    readOnly: true
                     font.family: "Monospace"
-                    Layout.fillWidth: true
                 }
 
                 QQC2.Button {
@@ -97,7 +98,7 @@ Kirigami.ScrollablePage {
                     icon.name: "edit-copy-symbolic"
                     display: QQC2.AbstractButton.IconOnly
                     enabled: root.enabled
-                    onClicked: root.copyToClipboard(nandController.consoleId, qsTr("Console ID"), copyConsoleIdBtn)
+                    onClicked: root.copyToClipboard(nand.consoleId, qsTr("Console ID"), copyConsoleIdBtn)
                     QQC2.ToolTip.text: qsTr("Copy Console ID")
                     QQC2.ToolTip.visible: hovered
                 }
@@ -108,12 +109,10 @@ Kirigami.ScrollablePage {
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.smallSpacing
 
-                QQC2.TextField {
-                    text: typeof nandController !== "undefined" ? nandController.dvdKey : ""
+                InfoField {
+                    text: nand.dvdKey
                     placeholderText: qsTr("Encrypted")
-                    readOnly: true
                     font.family: "Monospace"
-                    Layout.fillWidth: true
                 }
 
                 QQC2.Button {
@@ -121,26 +120,22 @@ Kirigami.ScrollablePage {
                     icon.name: "edit-copy-symbolic"
                     display: QQC2.AbstractButton.IconOnly
                     enabled: root.enabled
-                    onClicked: root.copyToClipboard(nandController.dvdKey, qsTr("DVD Key"), copyDvdKeyBtn)
+                    onClicked: root.copyToClipboard(nand.dvdKey, qsTr("DVD Key"), copyDvdKeyBtn)
                     QQC2.ToolTip.text: qsTr("Copy DVD Key")
                     QQC2.ToolTip.visible: hovered
                 }
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("Game Region:")
-                text: typeof nandController !== "undefined" ? nandController.gameRegion : ""
+                text: nand.gameRegion
                 placeholderText: qsTr("Encrypted")
-                readOnly: true
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("Console Type:")
-                text: typeof nandController !== "undefined" ? nandController.consoleType : ""
+                text: nand.consoleType
                 placeholderText: qsTr("Encrypted")
-                readOnly: true
-                Layout.fillWidth: true
             }
         }
 

@@ -8,14 +8,14 @@ Kirigami.OverlaySheet {
 
     title: qsTr("Keyvault Details")
 
-    property string consoleModel: qsTr("Trinity")
-    property string kvType: qsTr("Type 2 (Slim)")
-    property string consoleId: "028045612398"
-    property string serialNumber: "504938210305"
-    property string region: "0x0069 (PAL-EUR)"
-    property string osig: "PLDS    DG-16D4S        0501"
-    property string dvdKey: "A1B2C3D4E5F67890123456789ABCDEF0"
-    property string mfrDate: "2011-05-18"
+    property string consoleModel
+    property string kvType
+    property string consoleId
+    property string serialNumber
+    property string region
+    property string osig
+    property string dvdKey
+    property string mfrDate
     property bool isHashed: true
     property bool fcrtRequired: true
 

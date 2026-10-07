@@ -1,6 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
-import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 import "../components"
 
@@ -9,7 +7,7 @@ Kirigami.ScrollablePage {
 
     title: qsTr("NAND Builder")
 
-    NandBuilder {
+    NandBuilderTabs {
         anchors.fill: parent
     }
 }

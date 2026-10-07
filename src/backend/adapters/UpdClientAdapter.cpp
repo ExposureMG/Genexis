@@ -45,6 +45,16 @@ std::string UpdClientAdapter::connectedIp() const {
   return (m_client && m_client->isConnected()) ? m_client->targetIp() : "";
 }
 
+// An open connection to a different console must not be reused when the user
+// has changed the target IP.
+void UpdClientAdapter::connectToTarget(const std::string &ipAddress) {
+  if (ipAddress.empty() || (isConnected() && connectedIp() == ipAddress)) {
+    return;
+  }
+  disconnect();
+  connect(ipAddress, 730);
+}
+
 std::expected<void, std::string>
 UpdClientAdapter::readNand(const std::filesystem::path &outputPath,
                            size_t dumpSize, FlashProgressCallback progressCb) {
@@ -127,9 +137,7 @@ std::expected<void, std::string> UpdClientAdapter::shutdownConsole() {
 
 std::expected<FlashInfo, std::string>
 UpdClientAdapter::getFlashInfo(const FlashDeviceConfig &config) {
-  if (!isConnected() && !config.ipAddress.empty()) {
-    connect(config.ipAddress, 730);
-  }
+  connectToTarget(config.ipAddress);
 
   if (!isConnected()) {
     return std::unexpected("UpdServer connection failed to target: " +
@@ -157,11 +165,10 @@ UpdClientAdapter::readNand(const std::filesystem::path &outputPath,
                            const FlashDeviceConfig &config,
                            FlashProgressCallback progressCb) {
   (void)startBlock;
-  if (!isConnected() && !config.ipAddress.empty()) {
-    connect(config.ipAddress, 730);
-  }
+  connectToTarget(config.ipAddress);
 
-  size_t dumpSize = (blockCount > 0) ? (blockCount * 16 * 1024) : 0;
+  size_t dumpSize =
+      (blockCount > 0) ? (static_cast<size_t>(blockCount) * 16 * 1024) : 0;
   return readNand(outputPath, dumpSize, progressCb);
 }
 
@@ -173,18 +180,14 @@ UpdClientAdapter::writeNand(const std::filesystem::path &inputPath,
   (void)startBlock;
   (void)eraseFirst;
   (void)verifyAfter;
-  if (!isConnected() && !config.ipAddress.empty()) {
-    connect(config.ipAddress, 730);
-  }
+  connectToTarget(config.ipAddress);
   return writeNand(inputPath, progressCb);
 }
 
 std::expected<void, std::string>
 UpdClientAdapter::eraseNand(uint32_t startBlock, uint32_t blockCount,
                             const FlashDeviceConfig &config) {
-  if (!isConnected() && !config.ipAddress.empty()) {
-    connect(config.ipAddress, 730);
-  }
+  connectToTarget(config.ipAddress);
 
   if (!isConnected()) {
     return std::unexpected("UpdClient is not connected.");
@@ -197,4 +200,4 @@ UpdClientAdapter::eraseNand(uint32_t startBlock, uint32_t blockCount,
   return {};
 }
 
-} 
+} // namespace gxapi::backend

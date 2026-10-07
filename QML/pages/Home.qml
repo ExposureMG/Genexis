@@ -3,19 +3,20 @@ import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import QtQuick.Dialogs
 import org.kde.kirigami as Kirigami
+import "../components/nand"
 
 Kirigami.Page {
     id: root
     title: qsTr("Home")
 
+    NandMetadata {
+        id: nand
+    }
+
     FileDialog {
         id: homeFilePicker
         title: qsTr("Open NAND / Image File")
-        onAccepted: {
-            if (typeof nandController !== "undefined") {
-                nandController.openFile(selectedFile, "");
-            }
-        }
+        onAccepted: nandController.openFile(selectedFile, "")
     }
 
     ColumnLayout {
@@ -35,9 +36,9 @@ Kirigami.Page {
 
                     Kirigami.Icon {
                         anchors.fill: parent
-                        visible: !(typeof nandController !== "undefined" && nandController.isLoading)
+                        visible: !nandController.isLoading
                         source: {
-                            var path = (typeof nandController !== "undefined") ? nandController.loadedFilePath : "";
+                            var path = nandController.loadedFilePath;
                             var ext = path.split('.').pop().toLowerCase();
                             if (ext === "svf" || ext === "xsvf")
                                 return "cpu";
@@ -47,7 +48,7 @@ Kirigami.Page {
 
                     Image {
                         anchors.fill: parent
-                        visible: typeof nandController !== "undefined" && nandController.isLoading
+                        visible: nandController.isLoading
                         source: "qrc:/qt/qml/org/gxoss/genexis/assets/loading-gear.svg"
                         fillMode: Image.PreserveAspectFit
 
@@ -67,18 +68,17 @@ Kirigami.Page {
 
                     QQC2.Label {
                         text: {
-                            if (typeof nandController !== "undefined" && nandController.isLoading) {
+                            if (nandController.isLoading) {
                                 return qsTr("Loading NAND Image…");
                             }
-                            if (typeof nandController !== "undefined" && nandController.isNandLoaded) {
-                                var titleStr = nandController.consoleTarget !== "" ? nandController.consoleTarget : qsTr("Target NAND Image");
-                                if (nandController.imageSize !== "") {
-                                    titleStr += " (" + nandController.imageSize + ")";
+                            if (nandController.isNandLoaded) {
+                                var titleStr = nand.consoleTarget !== "" ? nand.consoleTarget : qsTr("Target NAND Image");
+                                if (nand.imageSize !== "") {
+                                    titleStr += " (" + nand.imageSize + ")";
                                 }
                                 return titleStr;
                             }
-                            var path = (typeof nandController !== "undefined") ? nandController.loadedFilePath : "";
-                            return path !== "" ? qsTr("Target NAND Image") : qsTr("No Image Loaded");
+                            return nandController.loadedFilePath !== "" ? qsTr("Target NAND Image") : qsTr("No Image Loaded");
                         }
                         font.bold: true
                         font.pointSize: Kirigami.Theme.defaultFont.pointSize + 1
@@ -86,10 +86,10 @@ Kirigami.Page {
 
                     QQC2.Label {
                         text: {
-                            if (typeof nandController !== "undefined" && nandController.isLoading) {
+                            if (nandController.isLoading) {
                                 return qsTr("Parsing NAND header and metadata…");
                             }
-                            var path = (typeof nandController !== "undefined") ? nandController.loadedFilePath : "";
+                            var path = nandController.loadedFilePath;
                             return path !== "" ? path : qsTr("Click 'Open File' in statusbar or browse to load a NAND image");
                         }
                         elide: Text.ElideMiddle
@@ -101,7 +101,7 @@ Kirigami.Page {
                 QQC2.Button {
                     icon.name: "document-open"
                     text: qsTr("Browse…")
-                    enabled: !(typeof nandController !== "undefined" && nandController.isLoading)
+                    enabled: !nandController.isLoading
                     onClicked: {
                         var appWin = root.Window ? root.Window.window : null;
                         if (appWin && typeof appWin.openOpenFileDialog === "function") {

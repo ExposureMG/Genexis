@@ -22,11 +22,7 @@ Kirigami.ApplicationWindow {
         pageTitle: root.pageStack.currentItem ? root.pageStack.currentItem.title : qsTr("Genexis")
 
         onMenuRequested: root.globalDrawer.drawerOpen = !root.globalDrawer.drawerOpen
-        onFileOpened: (filePath, key) => {
-            if (typeof nandController !== "undefined") {
-                nandController.openFile(filePath, key);
-            }
-        }
+        onFileOpened: (filePath, key) => nandController.openFile(filePath, key)
     }
 
     globalDrawer: Kirigami.GlobalDrawer {

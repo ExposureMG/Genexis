@@ -6,10 +6,52 @@ A working Qt6 Kirigami environment
 - kde-builder
 - craft
 
+At least Qt 6.8, KDE Frameworks 6 (Kirigami, I18n, CoreAddons, IconThemes,
+QQC2DesktopStyle), extra-cmake-modules and CMake 3.29.
+
 An up to date compiler that supports C++23
 - GCC 14.2+
-- Clang 19.1+ 
+- Clang 19.1+
 - MSVC 19.35+ (Visual Studio 2022 17.5+)
+
+Also required:
+- Git submodules: `git submodule update --init --recursive`
+- Rust and cargo, for NandProMax (<https://rustup.rs>). If cargo is not on
+  `PATH`, pass `-DCARGO_EXECUTABLE=/path/to/cargo`.
+- libudev and libusb-1.0 (Linux), libftdi1, zlib and pkg-config
+- Network access on the first configure: UpdClient fetches CLI11,
+  nlohmann_json and tl::expected from GitHub with CMake FetchContent.
+- ccache is optional and used automatically when found.
+
+## Configure, build and test
+
+```sh
+git submodule update --init --recursive
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+python3 -m unittest discover -s tests -v
+```
+
+`BUILD_TESTING` defaults to `ON`; pass `-DBUILD_TESTING=OFF` to skip the
+test executables. The bundled libraries' own test suites are never built.
+NandProMax is built by cargo into `<build dir>/nandpromax`.
+
+On Linux and macOS, `./build.sh` runs the configure and build steps. It reads
+`BUILD_DIR` (default `build`), `BUILD_TYPE` (default `Debug`) and `JOBS`
+(default: all CPUs), and passes extra arguments to CMake:
+
+```sh
+BUILD_TYPE=Release ./build.sh -DBUILD_TESTING=OFF
+```
+
+`./clean_build.sh` deletes the build directory first. It only deletes a
+directory that contains a `CMakeCache.txt`.
+
+If an older build directory fails to link `genexis` with "hidden symbol
+`ftdi_usb_purge_rx_buffer' ... is referenced by DSO", delete
+`<build dir>/bin/libftdi1.so*`. Earlier configurations built that unusable
+shared copy of the bundled libftdi; the current one only builds it static.
 
 ## Compiler selection
 
@@ -68,22 +110,25 @@ CMake is pre-configured but dependencies are required. KDE Builder will do every
 
 2. Distro Packages
 
-Ubuntu-based
-```bash	
-sudo apt install build-essential cmake extra-cmake-modules libkirigami-dev libkf6i18n-dev libkf6coreaddons-dev libkf6iconthemes-dev qt6-base-dev qt6-declarative-dev libkf6qqc2desktopstyle-dev libftdi1-dev pkg-config
+Rust is not listed below; install it with [rustup](https://rustup.rs) or your
+distro's `cargo` package.
+
+Ubuntu 26.04 or newer (older releases lack Qt 6.8 and KDE Frameworks 6)
+```bash
+sudo apt install build-essential cmake ninja-build git pkg-config extra-cmake-modules qt6-base-dev qt6-base-dev-tools qt6-declarative-dev qt6-declarative-dev-tools qt6-serialport-dev libkirigami-dev qml6-module-org-kde-kirigami libkf6i18n-dev libkf6coreaddons-dev libkf6iconthemes-dev libkf6qqc2desktopstyle-dev libftdi1-dev libudev-dev libusb-1.0-0-dev zlib1g-dev
 ```
 
 Arch-based
 ```bash
-sudo pacman -S base-devel extra-cmake-modules cmake kirigami ki18n kcoreaddons breeze kiconthemes qt6-base qt6-declarative qqc2-desktop-style libftdi pkgconf
+sudo pacman -S base-devel extra-cmake-modules cmake ninja git kirigami ki18n kcoreaddons breeze kiconthemes qt6-base qt6-declarative qt6-serialport qqc2-desktop-style libftdi libusb systemd-libs zlib pkgconf
 ```
 
 OpenSUSE
 ```bash
-sudo zypper install cmake kf6-extra-cmake-modules kf6-kirigami-devel kf6-ki18n-devel kf6-kcoreaddons-devel kf6-kiconthemes-devel qt6-base-devel qt6-declarative-devel qt6-quickcontrols2-devel kf6-qqc2-desktop-style libftdi1-devel pkg-config
+sudo zypper install cmake ninja git kf6-extra-cmake-modules kf6-kirigami-devel kf6-ki18n-devel kf6-kcoreaddons-devel kf6-kiconthemes-devel qt6-base-devel qt6-declarative-devel qt6-quickcontrols2-devel qt6-serialport-devel kf6-qqc2-desktop-style libftdi1-devel libusb-1_0-devel libudev-devel zlib-devel pkg-config
 ```
 
 Fedora
 ```bash
-sudo dnf install @development-tools @development-libs cmake extra-cmake-modules kf6-kirigami-devel kf6-ki18n-devel kf6-kcoreaddons-devel kf6-kiconthemes-devel qt6-qtbase-devel qt6-qtdeclarative-devel kf6-qqc2-desktop-style libftdi-devel pkgconf-pkg-config
+sudo dnf install @development-tools @development-libs cmake ninja-build git extra-cmake-modules kf6-kirigami-devel kf6-ki18n-devel kf6-kcoreaddons-devel kf6-kiconthemes-devel qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtserialport-devel kf6-qqc2-desktop-style libftdi-devel libusb1-devel systemd-devel zlib-devel pkgconf-pkg-config
 ```

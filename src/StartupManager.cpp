@@ -4,6 +4,11 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QStandardPaths>
+#include <QStringList>
+
+#include <set>
+#include <string>
 
 StartupManager::StartupManager(QObject *parent) : QObject(parent) {}
 
@@ -15,7 +20,6 @@ StartupManager &StartupManager::instance() {
 void StartupManager::runStartupSequence() {
   qDebug() << "[StartupManager] Starting Genexis startup sequence...";
 
-  
   Log::Init();
 
   Q_EMIT startupProgress(0.1,
@@ -54,27 +58,37 @@ void StartupManager::initAppDataDir() {
 
 void StartupManager::registerSettings() {
   m_settingsPath = QDir(m_appDataPath).filePath(QStringLiteral("genexis.ini"));
-  m_settings =
-      std::make_unique<QSettings>(m_settingsPath, QSettings::IniFormat);
 
   Q_EMIT settingsPathChanged();
   qDebug() << "[StartupManager] Settings file registered at:" << m_settingsPath;
 }
 
 void StartupManager::registerBackends() {
-  gxapi::backend::BackendManager::instance().initialize();
-  m_loadedPluginsCount =
-      5; 
+  const auto &backends = gxapi::backend::BackendManager::instance();
+
+  // A backend can serve several roles (NandProMax does flash and JTAG).
+  std::set<std::string> names;
+  for (const auto &list :
+       {backends.getAvailableBuilderBackends(),
+        backends.getAvailableFlashBackends(),
+        backends.getAvailableJtagBackends(),
+        backends.getAvailableNetworkBackends()}) {
+    names.insert(list.begin(), list.end());
+  }
+  m_loadedPluginsCount = static_cast<int>(names.size());
+
+  QStringList nameList;
+  for (const auto &name : names) {
+    nameList.append(QString::fromStdString(name));
+  }
 
   Q_EMIT pluginsLoaded(m_loadedPluginsCount);
-  qDebug() << "[StartupManager] Initialized built-in submodule backends "
-              "(gxbuild3, NandProMax, FTDI2SPI, xsvftool, UpdClient).";
+  qDebug() << "[StartupManager] Initialized built-in submodule backends:"
+           << nameList.join(QStringLiteral(", "));
 }
 
 bool StartupManager::checkForUpdates() {
-  
-  qDebug() << "[StartupManager] Update check performed (no updates currently "
-              "pending).";
+  qDebug() << "[StartupManager] Update check is not implemented; skipping.";
   return false;
 }
 

@@ -37,7 +37,7 @@ QQC2.ToolBar {
                     placeholderText: qsTr("File path…")
                     readOnly: true
                     onTextChanged: {
-                        if (text !== "" && typeof nandController !== "undefined") {
+                        if (text !== "") {
                             var autoKey = nandController.detectCpuKey(text);
                             if (autoKey !== "") {
                                 keyField.text = autoKey;
@@ -75,7 +75,7 @@ QQC2.ToolBar {
                 QQC2.Button {
                     text: qsTr("Confirm")
                     highlighted: true
-                    enabled: filePathField.text !== "" && !(typeof nandController !== "undefined" && nandController.isLoading)
+                    enabled: filePathField.text !== "" && !nandController.isLoading
                     onClicked: {
                         root.fileOpened(filePathField.text, keyField.text);
                         openFileDialog.close();
@@ -93,11 +93,9 @@ QQC2.ToolBar {
         id: filePicker
         onAccepted: {
             filePathField.text = selectedFile;
-            if (typeof nandController !== "undefined") {
-                var autoKey = nandController.detectCpuKey(selectedFile);
-                if (autoKey !== "") {
-                    keyField.text = autoKey;
-                }
+            var autoKey = nandController.detectCpuKey(selectedFile);
+            if (autoKey !== "") {
+                keyField.text = autoKey;
             }
         }
     }
@@ -131,7 +129,7 @@ QQC2.ToolBar {
         }
 
         RowLayout {
-            visible: typeof nandController !== "undefined" && nandController.isLoading
+            visible: nandController.isLoading
             spacing: Kirigami.Units.smallSpacing
             Layout.rightMargin: Kirigami.Units.largeSpacing
 
@@ -162,7 +160,7 @@ QQC2.ToolBar {
             icon.name: "document-open"
             display: QQC2.AbstractButton.TextBesideIcon
             Layout.rightMargin: Kirigami.Units.largeSpacing
-            enabled: !(typeof nandController !== "undefined" && nandController.isLoading)
+            enabled: !nandController.isLoading
             onClicked: openFileDialog.open()
         }
     }

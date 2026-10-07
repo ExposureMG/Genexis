@@ -45,26 +45,6 @@ target_include_directories(GxCrypt
 target_compile_definitions(GxCrypt PRIVATE _CRT_SECURE_NO_WARNINGS)
 target_link_libraries(GxCrypt PRIVATE bcrypt)
 
-set(STFS_SOURCES
-    ${GXBUILD3_ROOT}/extern/stfs/src/FileTableParser.cpp
-    ${GXBUILD3_ROOT}/extern/stfs/src/HeaderParser.cpp
-    ${GXBUILD3_ROOT}/extern/stfs/src/MetadataParser.cpp
-    ${GXBUILD3_ROOT}/extern/stfs/src/BlockParser.cpp
-    ${GXBUILD3_ROOT}/extern/stfs/src/FileExtractor.cpp
-    ${GXBUILD3_ROOT}/extern/stfs/src/HashVerifier.cpp
-    ${GXBUILD3_ROOT}/extern/stfs/src/Package.cpp
-)
-
-add_library(stfs STATIC ${STFS_SOURCES})
-target_compile_features(stfs PRIVATE cxx_std_23)
-target_include_directories(stfs
-    PUBLIC
-        ${GXBUILD3_ROOT}/extern/stfs/include
-    PRIVATE
-        ${GXBUILD3_ROOT}/extern/stfs/src
-)
-target_compile_definitions(stfs PRIVATE _CRT_SECURE_NO_WARNINGS)
-
 set(GXBUILD3_LIB_SOURCES
     ${GXBUILD3_ROOT}/src/Args.cpp
     ${GXBUILD3_ROOT}/src/BuildRunner.cpp
@@ -85,27 +65,44 @@ set(GXBUILD3_LIB_SOURCES
     ${GXBUILD3_ROOT}/src/nand/bootloaders/BootloaderPacker.cpp
     ${GXBUILD3_ROOT}/src/nand/objects/CoronaConfig.cpp
     ${GXBUILD3_ROOT}/src/nand/objects/FlashFileSystem.cpp
+    ${GXBUILD3_ROOT}/src/nand/objects/Freeboot.cpp
     ${GXBUILD3_ROOT}/src/nand/objects/Keyvault.cpp
     ${GXBUILD3_ROOT}/src/nand/objects/MobileData.cpp
     ${GXBUILD3_ROOT}/src/nand/objects/Patchset.cpp
+    ${GXBUILD3_ROOT}/src/nand/objects/SecuredFiles.cpp
     ${GXBUILD3_ROOT}/src/nand/objects/SMC.cpp
     ${GXBUILD3_ROOT}/src/nand/objects/XConfig.cpp
     ${GXBUILD3_ROOT}/src/nand/objects/Xboxupd.cpp
     ${GXBUILD3_ROOT}/src/nand/objects/XeLL.cpp
     ${GXBUILD3_ROOT}/src/patchers/Patcher.cpp
     ${GXBUILD3_ROOT}/src/patchers/Signature.cpp
+    ${GXBUILD3_ROOT}/src/stfs/BlockParser.cpp
+    ${GXBUILD3_ROOT}/src/stfs/FileExtractor.cpp
+    ${GXBUILD3_ROOT}/src/stfs/FileTableParser.cpp
+    ${GXBUILD3_ROOT}/src/stfs/HashVerifier.cpp
+    ${GXBUILD3_ROOT}/src/stfs/HeaderParser.cpp
+    ${GXBUILD3_ROOT}/src/stfs/MetadataParser.cpp
+    ${GXBUILD3_ROOT}/src/stfs/Package.cpp
+    ${GXBUILD3_ROOT}/src/stfs/PackageCommon.cpp
     ${GXBUILD3_ROOT}/src/stfs/StfsContainer.cpp
+    ${GXBUILD3_ROOT}/src/utils/BigUint.cpp
+    ${GXBUILD3_ROOT}/src/utils/BuildTime.cpp
     ${GXBUILD3_ROOT}/src/utils/FileManager.cpp
     ${GXBUILD3_ROOT}/src/utils/FusesetGenerator.cpp
     ${GXBUILD3_ROOT}/src/utils/Log.cpp
     ${GXBUILD3_ROOT}/src/utils/Options.cpp
     ${GXBUILD3_ROOT}/src/utils/Utils.cpp
+    ${GXBUILD3_ROOT}/src/utils/XeRsa.cpp
 )
 
 add_library(gxbuild3_lib STATIC ${GXBUILD3_LIB_SOURCES})
 target_compile_features(gxbuild3_lib PRIVATE cxx_std_23)
-target_include_directories(gxbuild3_lib PUBLIC
-    ${GXBUILD3_ROOT}/include
+target_include_directories(gxbuild3_lib
+    PUBLIC
+        ${GXBUILD3_ROOT}/include
+        ${GXBUILD3_ROOT}/include/stfs
+    PRIVATE
+        ${GXBUILD3_ROOT}/freeboot
 )
 target_compile_definitions(gxbuild3_lib PRIVATE
     _CRT_SECURE_NO_WARNINGS
@@ -115,5 +112,4 @@ target_compile_definitions(gxbuild3_lib PRIVATE
 target_link_libraries(gxbuild3_lib PUBLIC
     GxCrypt
     spdlog::spdlog
-    stfs
 )

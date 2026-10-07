@@ -162,4 +162,7 @@ private:
   QStringList m_simpleHacks;
 
   QStringList m_availablePatches;
+
+  // Every build writes the same output file, so builds must not overlap.
+  bool m_isBuilding{false};
 };

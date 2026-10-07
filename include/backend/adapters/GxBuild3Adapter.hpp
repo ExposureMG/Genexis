@@ -54,4 +54,4 @@ private:
   std::filesystem::path m_xeBuildDataPath;
 };
 
-} 
+} // namespace gxapi::backend

@@ -28,74 +28,11 @@ Item {
 
     readonly property bool isXeLL: buildTypeCombo.currentText === qsTr("XeLL Image")
 
-    QQC2.Dialog {
+    PatchesDialog {
         id: patchesDialog
-        title: qsTr("Configure Patches")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 18
-        implicitHeight: Kirigami.Units.gridUnit * 16
-
-        property var tempStates: ({})
-
-        onAboutToShow: {
-            var states = {};
-            var list = typeof nandBuilderController !== "undefined" ? nandBuilderController.availablePatches : [];
-            for (var i = 0; i < list.length; i++) {
-                var patchName = list[i];
-                states[patchName] = root.activePatches.indexOf(patchName) !== -1;
-            }
-            tempStates = states;
-        }
-
-        contentItem: QQC2.ScrollView {
-            clip: true
-            ListView {
-                id: patchesListView
-                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.availablePatches : []
-                delegate: QQC2.CheckDelegate {
-                    required property string modelData
-
-                    width: patchesListView.width
-                    text: modelData
-                    checked: patchesDialog.tempStates[modelData] || false
-                    onCheckedChanged: {
-                        var updated = Object.assign({}, patchesDialog.tempStates);
-                        updated[modelData] = checked;
-                        patchesDialog.tempStates = updated;
-                    }
-                }
-            }
-        }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-
-            QQC2.Button {
-                text: qsTr("Close")
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.RejectRole
-                onClicked: patchesDialog.reject()
-            }
-
-            QQC2.Button {
-                text: qsTr("Save")
-                highlighted: true
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.AcceptRole
-                onClicked: {
-                    var selected = [];
-                    var list = typeof nandBuilderController !== "undefined" ? nandBuilderController.availablePatches : [];
-                    for (var i = 0; i < list.length; i++) {
-                        var patchName = list[i];
-                        if (patchesDialog.tempStates[patchName]) {
-                            selected.push(patchName);
-                        }
-                    }
-                    root.activePatches = selected;
-                    patchesDialog.accept();
-                }
-            }
-        }
+        availablePatches: nandBuilderController.availablePatches
+        activePatches: root.activePatches
+        onPatchesSaved: patches => root.activePatches = patches
     }
 
     QQC2.Dialog {
@@ -227,112 +164,63 @@ Item {
                 model: [qsTr("NAND Image"), qsTr("XeLL Image"), qsTr("Donor")]
             }
 
-            QQC2.ComboBox {
+            SelectorCombo {
                 id: xellHackCombo
                 Kirigami.FormData.label: qsTr("Hack:")
-                Layout.fillWidth: true
                 visible: root.isXeLL
-                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.xellHacks : []
-                onCurrentTextChanged: {
-                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
-                        nandBuilderController.setSelectedXellHack(currentText);
-                    }
-                }
+                model: nandBuilderController.xellHacks
+                onSelected: value => nandBuilderController.setSelectedXellHack(value)
             }
 
-            QQC2.ComboBox {
+            SelectorCombo {
                 id: xellImageCombo
                 Kirigami.FormData.label: qsTr("Image:")
-                Layout.fillWidth: true
                 visible: root.isXeLL
-                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.xellImages : []
-                onCurrentTextChanged: {
-                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
-                        nandBuilderController.setSelectedXellImage(currentText);
-                    }
-                }
+                model: nandBuilderController.xellImages
+                onSelected: value => nandBuilderController.setSelectedXellImage(value)
             }
 
-            QQC2.ComboBox {
+            SelectorCombo {
                 id: versionCombo
                 Kirigami.FormData.label: qsTr("Version:")
-                Layout.fillWidth: true
                 visible: !root.isXeLL
-                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.buildVersions : []
-                onCurrentTextChanged: {
-                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
-                        nandBuilderController.setSelectedVersion(currentText);
-                    }
-                }
+                model: nandBuilderController.buildVersions
+                onSelected: value => nandBuilderController.setSelectedVersion(value)
             }
 
-            QQC2.ComboBox {
+            SelectorCombo {
                 id: imageTypeCombo
                 Kirigami.FormData.label: qsTr("Image Type:")
-                Layout.fillWidth: true
                 visible: !root.isXeLL
-                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.imageTypes : []
-                onCurrentTextChanged: {
-                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
-                        nandBuilderController.setSelectedImageType(currentText);
-                    }
-                }
+                model: nandBuilderController.imageTypes
+                onSelected: value => nandBuilderController.setSelectedImageType(value)
             }
 
-            QQC2.ComboBox {
+            SelectorCombo {
                 id: consoleCombo
                 Kirigami.FormData.label: qsTr("Console:")
-                Layout.fillWidth: true
                 visible: !root.isXeLL
-                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.consoles : []
-                onCurrentTextChanged: {
-                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
-                        nandBuilderController.setSelectedConsole(currentText);
-                    }
-                }
+                model: nandBuilderController.consoles
+                onSelected: value => nandBuilderController.setSelectedConsole(value)
             }
 
-            QQC2.ComboBox {
+            SelectorCombo {
                 id: smcCombo
                 Kirigami.FormData.label: qsTr("SMC:")
-                Layout.fillWidth: true
                 visible: !root.isXeLL
-                model: typeof nandBuilderController !== "undefined" ? nandBuilderController.smcFiles : []
-                onCurrentTextChanged: {
-                    if (typeof nandBuilderController !== "undefined" && currentText !== "") {
-                        nandBuilderController.setSelectedSmc(currentText);
-                    }
-                }
+                model: nandBuilderController.smcFiles
+                onSelected: value => nandBuilderController.setSelectedSmc(value)
             }
 
-            RowLayout {
+            PatchesRow {
                 Kirigami.FormData.label: qsTr("Patches & Options:")
-                Layout.fillWidth: true
                 spacing: Kirigami.Units.mediumSpacing
                 visible: !root.isXeLL && versionCombo.currentText !== "" && imageTypeCombo.currentText !== "" && consoleCombo.currentText !== ""
-
-                QQC2.Button {
-                    id: patchesButton
-                    enabled: !imageTypeCombo.currentText.startsWith("RGL-")
-                    text: root.activePatches.length > 0 ? qsTr("Patches (%1 selected)").arg(root.activePatches.length) : qsTr("Patches")
-                    icon.name: "preferences-system-patches"
-                    onClicked: patchesDialog.open()
-                }
-
-                QQC2.Button {
-                    id: optionsButton
-                    text: qsTr("Options")
-                    icon.name: "configure"
-                    onClicked: optionsDialog.open()
-                }
-
-                QQC2.Label {
-                    visible: root.activePatches.length > 0
-                    text: root.activePatches.join(", ")
-                    color: Kirigami.Theme.disabledTextColor
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
+                activePatches: root.activePatches
+                patchesEnabled: !imageTypeCombo.currentText.startsWith("RGL-")
+                showOptions: true
+                onPatchesClicked: patchesDialog.open()
+                onOptionsClicked: optionsDialog.open()
             }
         }
 
@@ -340,15 +228,7 @@ Item {
             Layout.fillHeight: true
         }
 
-        QQC2.Button {
-            id: buildButton
-            text: qsTr("Build Image")
-            icon.name: "system-run"
-            highlighted: true
-            Layout.fillWidth: true
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 16
-            Layout.alignment: Qt.AlignHCenter
-
+        BuildButton {
             onClicked: {
                 var config = {
                     "buildType": root.buildType,

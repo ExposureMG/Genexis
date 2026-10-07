@@ -8,8 +8,12 @@ Kirigami.ScrollablePage {
 
     title: qsTr("Image Overview")
 
-    enabled: typeof nandController !== "undefined" && nandController.isNandLoaded
+    enabled: nandController.isNandLoaded
     opacity: enabled ? 1.0 : 0.45
+
+    NandMetadata {
+        id: nand
+    }
 
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
@@ -34,38 +38,26 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("Image Size:")
-                text: typeof nandController !== "undefined" ? nandController.imageSize : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.imageSize
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("Block Type:")
-                text: typeof nandController !== "undefined" ? nandController.blockType : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.blockType
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("SMC Type:")
-                text: typeof nandController !== "undefined" ? nandController.smcType : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
-                Layout.fillWidth: true
+                text: nand.smcType
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("Kernel:")
-                text: typeof nandController !== "undefined" ? nandController.kernelVerOrType : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
-                Layout.fillWidth: true
+                text: nand.kernelVerOrType
             }
         }
 

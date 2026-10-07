@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
-import QtQuick.Dialogs
 import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
@@ -9,7 +8,7 @@ Kirigami.ScrollablePage {
 
     title: qsTr("Flasher")
 
-    property string selectedFilePath: typeof nandController !== "undefined" ? nandController.loadedFilePath : ""
+    property string selectedFilePath: nandController.loadedFilePath
     property alias operation: operationCombo.currentText
     property string logText: qsTr("[INFO] Flasher initialized.\n[INFO] Ready for operation.\n")
 
@@ -75,7 +74,7 @@ Kirigami.ScrollablePage {
                     anchors.centerIn: parent
                     width: Math.min(parent.width, Kirigami.Units.gridUnit * 14)
                     height: parent.height
-                    source: (typeof flasherController !== "undefined") ? flasherController.connectedFlasherImage : "qrc:/qt/qml/org/gxoss/genexis/assets/noflasher.png"
+                    source: flasherController.connectedFlasherImage
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     mipmap: true
@@ -90,10 +89,10 @@ Kirigami.ScrollablePage {
                 id: flasherCombo
                 Kirigami.FormData.label: qsTr("Flasher:")
                 Layout.fillWidth: true
-                model: (typeof flasherController !== "undefined") ? flasherController.availableFlashers : ["None", "UpdClient (Network)"]
-                currentIndex: (typeof flasherController !== "undefined") ? model.indexOf(flasherController.selectedFlasher) : 0
+                model: flasherController.availableFlashers
+                currentIndex: model.indexOf(flasherController.selectedFlasher)
                 onCurrentTextChanged: {
-                    if (typeof flasherController !== "undefined" && currentText !== "") {
+                    if (currentText !== "") {
                         flasherController.setSelectedFlasher(currentText);
                     }
                 }
@@ -104,29 +103,21 @@ Kirigami.ScrollablePage {
                 id: ipRow
                 Kirigami.FormData.label: qsTr("IP:")
                 Layout.fillWidth: true
-                visible: typeof flasherController !== "undefined" && flasherController.isUpdClientSelected
+                visible: flasherController.isUpdClientSelected
                 spacing: Kirigami.Units.smallSpacing
 
                 QQC2.TextField {
                     id: ipField
                     Layout.fillWidth: true
                     placeholderText: qsTr("192.168.1.xxx")
-                    text: (typeof flasherController !== "undefined") ? flasherController.targetIp : ""
-                    onTextChanged: {
-                        if (typeof flasherController !== "undefined") {
-                            flasherController.setTargetIp(text);
-                        }
-                    }
+                    text: flasherController.targetIp
+                    onTextChanged: flasherController.setTargetIp(text)
                 }
 
                 QQC2.Button {
                     text: qsTr("Search")
                     icon.name: "system-search"
-                    onClicked: {
-                        if (typeof flasherController !== "undefined") {
-                            flasherController.searchNetworkDevices();
-                        }
-                    }
+                    onClicked: flasherController.searchNetworkDevices()
                 }
             }
 
@@ -134,14 +125,11 @@ Kirigami.ScrollablePage {
                 id: deviceNetworkCombo
                 Kirigami.FormData.label: qsTr("Device:")
                 Layout.fillWidth: true
-                visible: typeof flasherController !== "undefined" && flasherController.isUpdClientSelected
-                model: (typeof flasherController !== "undefined") ? flasherController.detectedNetworkDevices : []
+                visible: flasherController.isUpdClientSelected
+                model: flasherController.detectedNetworkDevices
                 onCurrentTextChanged: {
                     if (currentText !== "") {
-                        var ipPart = currentText.split(' ')[0];
-                        if (typeof flasherController !== "undefined") {
-                            flasherController.setTargetIp(ipPart);
-                        }
+                        flasherController.setTargetIp(currentText.split(' ')[0]);
                     }
                 }
             }
@@ -151,8 +139,8 @@ Kirigami.ScrollablePage {
                 Kirigami.FormData.label: qsTr("Detected:")
                 Layout.fillWidth: true
                 readOnly: true
-                enabled: typeof flasherController === "undefined" || !flasherController.isUpdClientSelected
-                text: (typeof flasherController !== "undefined") ? flasherController.detectedHardwareInfo : qsTr("000000")
+                enabled: !flasherController.isUpdClientSelected
+                text: flasherController.detectedHardwareInfo
             }
 
             QQC2.TextField {
@@ -186,7 +174,7 @@ Kirigami.ScrollablePage {
         }
 
         Connections {
-            target: typeof flasherController !== "undefined" ? flasherController : null
+            target: flasherController
             ignoreUnknownSignals: true
             function onLogOutput(message) {
                 root.logText += message + "\n";
@@ -214,7 +202,7 @@ Kirigami.ScrollablePage {
             text: root.getActionButtonText()
             icon.name: "system-run"
             highlighted: true
-            enabled: typeof flasherController === "undefined" || !flasherController.isBusy
+            enabled: !flasherController.isBusy
             Layout.fillWidth: true
             Layout.maximumWidth: Kirigami.Units.gridUnit * 18
             Layout.alignment: Qt.AlignHCenter
@@ -234,16 +222,14 @@ Kirigami.ScrollablePage {
                 }
 
                 if (op === qsTr("Detect")) {
-                    if (typeof flasherController !== "undefined") {
-                        flasherController.detectHardware(root.selectedFilePath);
-                    }
+                    flasherController.detectHardware(root.selectedFilePath);
                     return;
                 }
 
                 var timestamp = new Date().toLocaleTimeString();
-                var initLog = "[" + timestamp + "] Initiating " + op + " operation...\n";
+                var initLog = qsTr("[%1] Initiating %2 operation...").arg(timestamp).arg(op) + "\n";
                 if (root.selectedFilePath !== "") {
-                    initLog += "[" + timestamp + "] Target file: " + root.selectedFilePath + "\n";
+                    initLog += qsTr("[%1] Target file: %2").arg(timestamp).arg(root.selectedFilePath) + "\n";
                 }
 
                 root.logText += initLog;
@@ -253,9 +239,7 @@ Kirigami.ScrollablePage {
                     appWin.showConsole(qsTr("Flasher Console"), initLog, true);
                 }
 
-                if (typeof flasherController !== "undefined") {
-                    flasherController.performOperation(root.selectedFilePath, op, {});
-                }
+                flasherController.performOperation(root.selectedFilePath, op, {});
             }
         }
     }

@@ -1,15 +1,11 @@
 #pragma once
 
 #include <QObject>
-#include <QSettings>
 #include <QString>
 #include <QStringList>
-#include <qqmlregistration.h>
 
 class Settings : public QObject {
   Q_OBJECT
-  QML_ELEMENT
-  QML_SINGLETON
 
   Q_PROPERTY(QString buildBackend READ buildBackend WRITE setBuildBackend NOTIFY
                  buildBackendChanged)
@@ -54,10 +50,6 @@ public:
 
   Q_INVOKABLE void loadSettings();
   Q_INVOKABLE void saveSettings();
-
-  static QString getSetting(const QString &key,
-                            const QString &defaultValue = QString());
-  static void setSetting(const QString &key, const QString &value);
 
 Q_SIGNALS:
   void buildBackendChanged();

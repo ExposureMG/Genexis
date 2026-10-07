@@ -17,7 +17,7 @@ public:
 
   [[nodiscard]] std::string serviceName() const override { return "UpdClient"; }
 
-  
+  // INetworkService
   std::vector<DiscoveredConsoleInfo> discoverConsoles() override;
   bool connect(const std::string &ipAddress, uint16_t port = 730) override;
   void disconnect() override;
@@ -35,7 +35,7 @@ public:
   std::expected<void, std::string> rebootConsole() override;
   std::expected<void, std::string> shutdownConsole() override;
 
-  
+  // IFlashService
   std::expected<FlashInfo, std::string>
   getFlashInfo(const FlashDeviceConfig &config = {}) override;
 
@@ -55,7 +55,9 @@ public:
             const FlashDeviceConfig &config = {}) override;
 
 private:
+  void connectToTarget(const std::string &ipAddress);
+
   std::unique_ptr<updclient::updserver::UpdServerClient> m_client;
 };
 
-} 
+} // namespace gxapi::backend

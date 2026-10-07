@@ -13,6 +13,7 @@
 
 #include <QString>
 #include <QVariantList>
+#include <QVariantMap>
 
 struct NandInfoSnapshot {
   QString imageSize;
@@ -62,3 +63,10 @@ struct NandInfoSnapshot {
 NandInfoSnapshot MapPublicNandInfo(const AllNandInfo &info);
 NandInfoSnapshot MapDecryptedNandInfo(const AllNandInfo &info,
                                       NandInfoSnapshot current);
+
+// The QML view of a snapshot, grouped by concern: "header", "smc",
+// "bootloaders" and "keyvault" (maps of strings) plus "components" (the card
+// list). Every key is present even when its value is empty, so QML bindings
+// never read undefined. smcDecrypted is not included; Nand exposes it as
+// isSmcDecrypted.
+QVariantMap NandInfoToVariantMap(const NandInfoSnapshot &snapshot);

@@ -16,15 +16,19 @@ Kirigami.ScrollablePage {
     signal loadRequested
     signal saveRequested(var config)
 
-    Component.onCompleted: {
-        if (typeof settingsController !== "undefined") {
-            settingsController.loadSettings();
-            buildBackendCombo.currentIndex = buildBackendCombo.model.indexOf(settingsController.buildBackend) !== -1 ? buildBackendCombo.model.indexOf(settingsController.buildBackend) : 0;
-            flashBackendCombo.currentIndex = flashBackendCombo.model.indexOf(settingsController.flashBackend) !== -1 ? flashBackendCombo.model.indexOf(settingsController.flashBackend) : 0;
-            timingBackendCombo.currentIndex = timingBackendCombo.model.indexOf(settingsController.timingFlashBackend) !== -1 ? timingBackendCombo.model.indexOf(settingsController.timingFlashBackend) : 0;
-            wirelessBackendCombo.currentIndex = wirelessBackendCombo.model.indexOf(settingsController.wirelessBackend) !== -1 ? wirelessBackendCombo.model.indexOf(settingsController.wirelessBackend) : 0;
-        }
+    function selectBackend(combo, name) {
+        combo.currentIndex = Math.max(0, combo.model.indexOf(name));
     }
+
+    function reloadBackends() {
+        settingsController.loadSettings();
+        root.selectBackend(buildBackendCombo, settingsController.buildBackend);
+        root.selectBackend(flashBackendCombo, settingsController.flashBackend);
+        root.selectBackend(timingBackendCombo, settingsController.timingFlashBackend);
+        root.selectBackend(wirelessBackendCombo, settingsController.wirelessBackend);
+    }
+
+    Component.onCompleted: root.reloadBackends()
 
     ColumnLayout {
         anchors.fill: parent
@@ -38,28 +42,28 @@ Kirigami.ScrollablePage {
                 id: buildBackendCombo
                 Kirigami.FormData.label: qsTr("Build Backend:")
                 Layout.fillWidth: true
-                model: (typeof settingsController !== "undefined" && settingsController.availableBuildBackends.length > 0) ? settingsController.availableBuildBackends : ["gxbuild3"]
+                model: settingsController.availableBuildBackends
             }
 
             QQC2.ComboBox {
                 id: flashBackendCombo
                 Kirigami.FormData.label: qsTr("Flash Backend:")
                 Layout.fillWidth: true
-                model: (typeof settingsController !== "undefined" && settingsController.availableFlashBackends.length > 0) ? settingsController.availableFlashBackends : ["NandProMax", "FTDI2SPI", "UpdClient"]
+                model: settingsController.availableFlashBackends
             }
 
             QQC2.ComboBox {
                 id: timingBackendCombo
                 Kirigami.FormData.label: qsTr("Timing Flash Backend:")
                 Layout.fillWidth: true
-                model: (typeof settingsController !== "undefined" && settingsController.availableTimingFlashBackends.length > 0) ? settingsController.availableTimingFlashBackends : ["NandProMax", "xsvftool"]
+                model: settingsController.availableTimingFlashBackends
             }
 
             QQC2.ComboBox {
                 id: wirelessBackendCombo
                 Kirigami.FormData.label: qsTr("Wireless Backend:")
                 Layout.fillWidth: true
-                model: (typeof settingsController !== "undefined" && settingsController.availableWirelessBackends.length > 0) ? settingsController.availableWirelessBackends : ["UpdClient"]
+                model: settingsController.availableWirelessBackends
             }
         }
 
@@ -79,13 +83,7 @@ Kirigami.ScrollablePage {
                 icon.name: "document-open"
                 Layout.fillWidth: true
                 onClicked: {
-                    if (typeof settingsController !== "undefined") {
-                        settingsController.loadSettings();
-                        buildBackendCombo.currentIndex = buildBackendCombo.model.indexOf(settingsController.buildBackend) !== -1 ? buildBackendCombo.model.indexOf(settingsController.buildBackend) : 0;
-                        flashBackendCombo.currentIndex = flashBackendCombo.model.indexOf(settingsController.flashBackend) !== -1 ? flashBackendCombo.model.indexOf(settingsController.flashBackend) : 0;
-                        timingBackendCombo.currentIndex = timingBackendCombo.model.indexOf(settingsController.timingFlashBackend) !== -1 ? timingBackendCombo.model.indexOf(settingsController.timingFlashBackend) : 0;
-                        wirelessBackendCombo.currentIndex = wirelessBackendCombo.model.indexOf(settingsController.wirelessBackend) !== -1 ? wirelessBackendCombo.model.indexOf(settingsController.wirelessBackend) : 0;
-                    }
+                    root.reloadBackends();
                     root.loadRequested();
                 }
             }
@@ -97,13 +95,11 @@ Kirigami.ScrollablePage {
                 highlighted: true
                 Layout.fillWidth: true
                 onClicked: {
-                    if (typeof settingsController !== "undefined") {
-                        settingsController.buildBackend = root.buildBackend;
-                        settingsController.flashBackend = root.flashBackend;
-                        settingsController.timingFlashBackend = root.timingFlashBackend;
-                        settingsController.wirelessBackend = root.wirelessBackend;
-                        settingsController.saveSettings();
-                    }
+                    settingsController.buildBackend = root.buildBackend;
+                    settingsController.flashBackend = root.flashBackend;
+                    settingsController.timingFlashBackend = root.timingFlashBackend;
+                    settingsController.wirelessBackend = root.wirelessBackend;
+                    settingsController.saveSettings();
                     var config = {
                         "buildBackend": root.buildBackend,
                         "flashBackend": root.flashBackend,

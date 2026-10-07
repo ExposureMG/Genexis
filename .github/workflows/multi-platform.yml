@@ -1,75 +1,77 @@
-# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms
+name: CI
 
 on:
-  #push:
-  #  branches: [ "main" ]
+  push:
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Only Linux is built here. Windows and macOS builds need a KDE Craft
+# environment (Qt 6.8+ and KDE Frameworks 6 are not available on the stock
+# runner images), so they are not part of CI until a Craft-based job exists.
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-
+  linux:
+    name: Linux (${{ matrix.compiler }})
+    runs-on: ubuntu-latest
+    # Ubuntu 26.04 is the first LTS that ships Qt >= 6.8, KDE Frameworks 6 and
+    # CMake >= 3.29, which the build requires.
+    container: ubuntu:26.04
     strategy:
-      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
-
-      # Set up a matrix to run the following 3 configurations:
-      # 1. <Windows, Release, latest MSVC compiler toolchain on the default runner image, default generator>
-      # 2. <Linux, Release, latest GCC compiler toolchain on the default runner image, default generator>
-      # 3. <Linux, Release, latest Clang compiler toolchain on the default runner image, default generator>
-      #
-      # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        build_type: [Release]
-        c_compiler: [clang, clang-cl]
         include:
-          - os: windows-latest
-            c_compiler: clang-cl
-            cpp_compiler: clang-cl
-          - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-          - os: macos-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-        exclude:
-          - os: windows-latest
-            c_compiler: gcc
-          - os: windows-latest
-            c_compiler: clang
-          - os: ubuntu-latest
-            c_compiler: cl
-
+          - compiler: clang
+            cc: clang
+            cxx: clang++
+          - compiler: gcc
+            cc: gcc
+            cxx: g++
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      QT_QPA_PLATFORM: offscreen
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
     steps:
-    - uses: actions/checkout@v4
+      # git must exist before checkout, or actions/checkout falls back to a
+      # tarball download without submodules.
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential clang ca-certificates curl git ninja-build \
+            pkg-config python3 cmake extra-cmake-modules \
+            qt6-base-dev qt6-base-dev-tools qt6-declarative-dev \
+            qt6-declarative-dev-tools qt6-serialport-dev \
+            libkirigami-dev qml6-module-org-kde-kirigami \
+            libkf6i18n-dev libkf6coreaddons-dev libkf6iconthemes-dev \
+            libkf6qqc2desktopstyle-dev \
+            libftdi1-dev libudev-dev libusb-1.0-0-dev zlib1g-dev libgl-dev
 
-    - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
-      id: strings
-      shell: bash
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -S ${{ github.workspace }}
+      - uses: dtolnay/rust-toolchain@stable
 
-    - name: Build
-      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DBUILD_TESTING=ON
 
-    - name: Test
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest --build-config ${{ matrix.build_type }}
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: CTest
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Compiler policy tests
+        run: python3 -m unittest discover -s tests -v

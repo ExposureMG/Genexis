@@ -1,15 +1,16 @@
 #include "pages/NandBuilderController.hpp"
 
+#include "Async.hpp"
 #include "NandBuildConfigMapper.hpp"
 #include "StartupManager.hpp"
 #include "backend/BackendManager.hpp"
 #include "pages/Nand.hpp"
 
+#include <QDebug>
 #include <QDir>
 #include <QStringList>
 #include <algorithm>
 #include <string_view>
-#include <thread>
 
 using BackendManager = gxapi::backend::BackendManager;
 
@@ -324,6 +325,12 @@ void NandBuilderController::scanSmc() {
 }
 
 void NandBuilderController::buildImage(const QVariantMap &config) {
+  if (m_isBuilding) {
+    qWarning() << "[NandBuilder] A build is already in progress; ignoring "
+                  "the new build request.";
+    return;
+  }
+
   Q_EMIT buildStarted();
   Q_EMIT buildProgress(5, QStringLiteral("Validating build parameters..."));
 
@@ -393,21 +400,34 @@ void NandBuilderController::buildImage(const QVariantMap &config) {
     return;
   }
 
-  std::thread worker([this, bConfig]() {
-    auto progressCb = [this](const gxapi::backend::BuilderProgressInfo &info) {
-      Q_EMIT buildProgress(info.percentage, QString::fromStdString(info.statusMessage));
-    };
-
-    auto res = BackendManager::instance().builder().buildImage(bConfig, progressCb);
-    if (res.has_value()) {
-      Q_EMIT buildProgress(100, QStringLiteral("NAND image assembled successfully!"));
-      Q_EMIT buildFinished(true, QString::fromStdString(res->outputPath),
-                           QString::fromStdString(res->logOutput));
-    } else {
-      QString err = QStringLiteral("Build failed: ") + QString::fromStdString(res.error());
-      Q_EMIT buildProgress(100, err);
-      Q_EMIT buildFinished(false, QString(), err);
-    }
-  });
-  worker.detach();
+  m_isBuilding = true;
+  gxapi::runAsync(
+      this,
+      [this, bConfig](const gxapi::ReceiverPoster &poster) {
+        return BackendManager::instance().builder().buildImage(
+            bConfig, [this, poster](const auto &info) {
+              poster.post(
+                  [this, percentage = info.percentage,
+                   status = QString::fromStdString(info.statusMessage)]() {
+                    Q_EMIT buildProgress(percentage, status);
+                  });
+            });
+      },
+      [this](
+          const std::expected<gxapi::backend::BuildResult, std::string> &res) {
+        // Cleared before buildFinished, so a build started from a
+        // buildFinished handler is accepted.
+        m_isBuilding = false;
+        if (res.has_value()) {
+          Q_EMIT buildProgress(
+              100, QStringLiteral("NAND image assembled successfully!"));
+          Q_EMIT buildFinished(true, QString::fromStdString(res->outputPath),
+                               QString::fromStdString(res->logOutput));
+        } else {
+          const QString err = QStringLiteral("Build failed: ") +
+                              QString::fromStdString(res.error());
+          Q_EMIT buildProgress(100, err);
+          Q_EMIT buildFinished(false, QString(), err);
+        }
+      });
 }

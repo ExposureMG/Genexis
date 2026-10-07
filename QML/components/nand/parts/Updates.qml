@@ -2,20 +2,16 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
+import ".."
 
 Kirigami.ScrollablePage {
     id: root
 
     title: qsTr("System Updates")
 
-    property string cf0Version: "17559"
-    property string cf0Pairing: "000000"
-    property string cf0Lockdown: "12"
-    property string cg0Version: "17559"
-    property string cf1Version: "17559"
-    property string cf1Pairing: "000000"
-    property string cf1Lockdown: "12"
-    property string cg1Version: "17559"
+    NandMetadata {
+        id: nand
+    }
 
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
@@ -75,7 +71,7 @@ Kirigami.ScrollablePage {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                     QQC2.TextField {
-                        text: root.cf0Version
+                        text: nand.cf0Version
                         readOnly: true
                         font.family: "Monospace"
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
@@ -89,7 +85,7 @@ Kirigami.ScrollablePage {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                     QQC2.TextField {
-                        text: root.cf0Pairing
+                        text: nand.cf0Pairing
                         readOnly: true
                         font.family: "Monospace"
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
@@ -103,7 +99,7 @@ Kirigami.ScrollablePage {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                     QQC2.TextField {
-                        text: root.cf0Lockdown
+                        text: nand.cf0Ldv
                         readOnly: true
                         font.family: "Monospace"
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
@@ -131,7 +127,7 @@ Kirigami.ScrollablePage {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                     QQC2.TextField {
-                        text: root.cg0Version
+                        text: nand.cg0Version
                         readOnly: true
                         font.family: "Monospace"
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
@@ -181,7 +177,7 @@ Kirigami.ScrollablePage {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                     QQC2.TextField {
-                        text: root.cf1Version
+                        text: nand.cf1Version
                         readOnly: true
                         font.family: "Monospace"
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
@@ -195,7 +191,7 @@ Kirigami.ScrollablePage {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                     QQC2.TextField {
-                        text: root.cf1Pairing
+                        text: nand.cf1Pairing
                         readOnly: true
                         font.family: "Monospace"
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
@@ -209,7 +205,7 @@ Kirigami.ScrollablePage {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                     QQC2.TextField {
-                        text: root.cf1Lockdown
+                        text: nand.cf1Ldv
                         readOnly: true
                         font.family: "Monospace"
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
@@ -237,7 +233,7 @@ Kirigami.ScrollablePage {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                     QQC2.TextField {
-                        text: root.cg1Version
+                        text: nand.cg1Version
                         readOnly: true
                         font.family: "Monospace"
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter

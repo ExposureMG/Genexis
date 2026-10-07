@@ -10,12 +10,38 @@
 
 namespace gxapi::backend {
 
+namespace {
+
+template <typename Service>
+Service &findService(const std::vector<Service *> &services,
+                     const std::string &name, Service &fallback) {
+  const auto it = std::ranges::find_if(
+      services, [&name](const Service *s) { return s->serviceName() == name; });
+  return it != services.end() ? **it : fallback;
+}
+
+template <typename Service>
+std::vector<std::string> serviceNames(const std::vector<Service *> &services) {
+  std::vector<std::string> names;
+  names.reserve(services.size());
+  for (const Service *s : services) {
+    names.push_back(s->serviceName());
+  }
+  return names;
+}
+
+} // namespace
+
 BackendManager::BackendManager()
     : m_nandProMax(std::make_shared<NandProMaxAdapter>()),
       m_ftdi2Spi(std::make_shared<Ftdi2SpiAdapter>()),
       m_xsvfTool(std::make_shared<XsvfToolAdapter>()),
       m_updClient(std::make_shared<UpdClientAdapter>()),
-      m_gxBuild3(std::make_shared<GxBuild3Adapter>()) {}
+      m_gxBuild3(std::make_shared<GxBuild3Adapter>()),
+      m_flashServices{m_nandProMax.get(), m_ftdi2Spi.get(), m_updClient.get()},
+      m_jtagServices{m_nandProMax.get(), m_xsvfTool.get()},
+      m_builderServices{m_gxBuild3.get()},
+      m_networkServices{m_updClient.get()} {}
 
 BackendManager::~BackendManager() = default;
 
@@ -24,75 +50,35 @@ BackendManager &BackendManager::instance() {
   return inst;
 }
 
-void BackendManager::initialize() {}
-
 IFlashService &
 BackendManager::flashForHardware(const std::string &hardwareName) {
-  std::string lower = hardwareName;
-  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-
-  if (lower.find("updclient") != std::string::npos ||
-      lower.find("updserver") != std::string::npos ||
-      lower.find("network") != std::string::npos) {
-    return *m_updClient;
-  }
-
-  auto dev = findDeviceByName(hardwareName);
-  if (dev.has_value()) {
-    if (dev->flashBackendName == "FTDI2SPI") {
-      return *m_ftdi2Spi;
-    }
-  }
-
-  return *m_nandProMax;
+  return findService<IFlashService>(
+      m_flashServices, flashBackendFor(hardwareName), *m_nandProMax);
 }
 
 IJtagService &BackendManager::jtagForHardware(const std::string &hardwareName) {
-  auto dev = findDeviceByName(hardwareName);
-  if (dev.has_value()) {
-    if (dev->jtagBackendName == "xsvftool") {
-      return *m_xsvfTool;
-    }
-  }
-
-  return *m_nandProMax;
+  return findService<IJtagService>(m_jtagServices, jtagBackendFor(hardwareName),
+                                   *m_nandProMax);
 }
 
-IFlashService &BackendManager::flash(const std::string &name) {
-  if (!name.empty()) {
-    return flashForHardware(name);
-  }
-  return *m_nandProMax;
-}
-
-IJtagService &BackendManager::jtag(const std::string &name) {
-  if (!name.empty()) {
-    return jtagForHardware(name);
-  }
-  return *m_xsvfTool;
-}
-
-IBuilderService &BackendManager::builder(const std::string &name) {
-  (void)name;
-  return *m_gxBuild3;
-}
+IBuilderService &BackendManager::builder() { return *m_gxBuild3; }
 
 INetworkService &BackendManager::network() { return *m_updClient; }
 
 std::vector<std::string> BackendManager::getAvailableFlashBackends() const {
-  return {"NandProMax", "FTDI2SPI", "UpdClient"};
+  return serviceNames(m_flashServices);
 }
 
 std::vector<std::string> BackendManager::getAvailableJtagBackends() const {
-  return {"NandProMax", "xsvftool"};
+  return serviceNames(m_jtagServices);
 }
 
 std::vector<std::string> BackendManager::getAvailableBuilderBackends() const {
-  return {"gxbuild3"};
+  return serviceNames(m_builderServices);
 }
 
 std::vector<std::string> BackendManager::getAvailableNetworkBackends() const {
-  return {"UpdClient"};
+  return serviceNames(m_networkServices);
 }
 
-} 
+} // namespace gxapi::backend

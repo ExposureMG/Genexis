@@ -49,7 +49,7 @@ public:
 
   [[nodiscard]] virtual std::string serviceName() const = 0;
 
-  
+  // Advanced mode: the full build-data catalogue.
   virtual std::vector<std::string> getAvailableVersions() = 0;
   virtual std::vector<std::string>
   getAvailableImageTypes(const std::string &version) = 0;
@@ -61,11 +61,11 @@ public:
   virtual std::vector<std::string>
   getAvailableSmcFiles(const std::string &consoleModel) = 0;
 
-  
+  // XeLL-only images
   virtual std::vector<std::string> getXellHacks() = 0;
   virtual std::vector<std::string> getXellImages(const std::string &hack) = 0;
 
-  
+  // Simple mode: curated choices mapped onto underlying image types.
   virtual std::vector<std::string> getSimpleVersions() = 0;
   virtual std::vector<std::string>
   getSimpleImageTypes(const std::string &version) = 0;
@@ -75,10 +75,9 @@ public:
   resolveUnderlyingImageType(const std::string &simpleType,
                              const std::string &simpleHack) = 0;
 
-  
   virtual std::expected<BuildResult, std::string>
   buildImage(const NandBuildConfig &config,
              BuilderProgressCallback progressCb = nullptr) = 0;
 };
 
-} 
+} // namespace gxapi::backend

@@ -2,14 +2,19 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
+import ".."
 
 Kirigami.ScrollablePage {
     id: root
 
     title: qsTr("Second Stage")
 
-    enabled: typeof nandController !== "undefined" && nandController.isNandLoaded
+    enabled: nandController.isNandLoaded
     opacity: enabled ? 1.0 : 0.45
+
+    NandMetadata {
+        id: nand
+    }
 
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
@@ -34,76 +39,53 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("CB / CB_A Version:")
-                text: typeof nandController !== "undefined" ? nandController.cbAVersion : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.cbAVersion
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("CB_B Version:")
-                text: typeof nandController !== "undefined" ? nandController.cbBVersion : ""
+                text: nand.cbBVersion
                 placeholderText: qsTr("N/A")
-                readOnly: true
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("CB Size / Magic:")
-                text: typeof nandController !== "undefined" && nandController.cbSize !== "" ? nandController.cbSize + " bytes (" + nandController.cbMagic + ")" : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.cbSize !== "" ? qsTr("%1 bytes (%2)").arg(nand.cbSize).arg(nand.cbMagic) : ""
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("SC / CC (3BL) Version:")
-                text: typeof nandController !== "undefined" ? (nandController.scVersion !== "" ? nandController.scVersion : nandController.ccVersion) : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.scVersion !== "" ? nand.scVersion : nand.ccVersion
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("CD (4BL) Version:")
-                text: typeof nandController !== "undefined" ? nandController.cdVersion : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.cdVersion
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("CE (5BL) Version:")
-                text: typeof nandController !== "undefined" ? nandController.ceVersion : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.ceVersion
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("CF0 / CG0 Patch Version:")
-                text: typeof nandController !== "undefined" && nandController.cf0Version !== "" ? nandController.cf0Version + " / " + nandController.cg0Version : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.cf0Version !== "" ? nand.cf0Version + " / " + nand.cg0Version : ""
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("CF1 / CG1 Patch Version:")
-                text: typeof nandController !== "undefined" && nandController.cf1Version !== "" ? nandController.cf1Version + " / " + nandController.cg1Version : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.cf1Version !== "" ? nand.cf1Version + " / " + nand.cg1Version : ""
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
         }
 

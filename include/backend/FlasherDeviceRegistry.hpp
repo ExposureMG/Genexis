@@ -1,12 +1,20 @@
 #pragma once
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace gxapi::backend {
+
+// Backend names, as each adapter reports in serviceName().
+inline constexpr char kNandProMaxBackend[] = "NandProMax";
+inline constexpr char kFtdi2SpiBackend[] = "FTDI2SPI";
+inline constexpr char kXsvfToolBackend[] = "xsvftool";
+inline constexpr char kUpdClientBackend[] = "UpdClient";
 
 struct FlasherDeviceProfile {
   std::string displayName;
@@ -20,17 +28,15 @@ struct FlasherDeviceProfile {
 };
 
 inline const std::vector<FlasherDeviceProfile> KnownFlasherDevices = {
-    
     {.displayName = "PicoFlasher",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/picoflasher.png",
-     .flashBackendName = "NandProMax",
+     .flashBackendName = kNandProMaxBackend,
      .vidPidList = {{0x600D, 0x7001}},
      .vidOnlyList = {0x2E8A, 0x600D}},
-    
     {.displayName = "xFlasher",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/xflasher.png",
-     .flashBackendName = "FTDI2SPI",
-     .jtagBackendName = "xsvftool",
+     .flashBackendName = kFtdi2SpiBackend,
+     .jtagBackendName = kXsvfToolBackend,
      .jtagProbe = "FTDI",
      .vidPidList = {{0x0403, 0x6001},
                     {0x0403, 0x6010},
@@ -38,23 +44,21 @@ inline const std::vector<FlasherDeviceProfile> KnownFlasherDevices = {
                     {0x0403, 0x6014},
                     {0x0403, 0x6015}},
      .vidOnlyList = {0x0403}},
-    
     {.displayName = "Nand-X / LPC",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/nandx.png",
-     .flashBackendName = "NandProMax",
-     .jtagBackendName = "NandProMax",
+     .flashBackendName = kNandProMaxBackend,
+     .jtagBackendName = kNandProMaxBackend,
      .vidPidList = {{0xFFFF, 0x0004}},
      .vidOnlyList = {}},
-    
     {.displayName = "TX DemoN",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/demon.png",
-     .flashBackendName = "NandProMax",
-     .jtagBackendName = "NandProMax",
+     .flashBackendName = kNandProMaxBackend,
+     .jtagBackendName = kNandProMaxBackend,
      .vidPidList = {{0x11D4, 0x444E}},
      .vidOnlyList = {}},
     {.displayName = "Pico-DirtyJTAG",
      .imageResource = "qrc:/qt/qml/org/gxoss/genexis/assets/pico-djtag.png",
-     .jtagBackendName = "xsvftool",
+     .jtagBackendName = kXsvfToolBackend,
      .jtagProbe = "DirtyJTAG",
      .vidPidList = {{0x1209, 0xC0CA}},
      .vidOnlyList = {}}};
@@ -76,22 +80,54 @@ inline std::optional<FlasherDeviceProfile> findDeviceByVidPid(uint16_t vid,
   return std::nullopt;
 }
 
+// Case-insensitive exact match on displayName; an empty name never matches.
 inline std::optional<FlasherDeviceProfile>
 findDeviceByName(const std::string &name) {
-  std::string lowerName = name;
-  std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
-                 ::tolower);
-
+  if (name.empty()) {
+    return std::nullopt;
+  }
+  const auto sameChar = [](unsigned char a, unsigned char b) {
+    return std::tolower(a) == std::tolower(b);
+  };
   for (const auto &dev : KnownFlasherDevices) {
-    std::string lowerDev = dev.displayName;
-    std::transform(lowerDev.begin(), lowerDev.end(), lowerDev.begin(),
-                   ::tolower);
-    if (lowerName.find(lowerDev) != std::string::npos ||
-        lowerDev.find(lowerName) != std::string::npos) {
+    if (std::ranges::equal(dev.displayName, name, sameChar)) {
       return dev;
     }
   }
   return std::nullopt;
 }
 
-} 
+// hardwareName is a profile's displayName, or kUpdClientBackend for the
+// network flasher. Hardware without a profile entry for the role, including
+// "None", falls back to NandProMax.
+inline std::string flashBackendFor(const std::string &hardwareName) {
+  if (hardwareName == kUpdClientBackend) {
+    return kUpdClientBackend;
+  }
+  const auto dev = findDeviceByName(hardwareName);
+  if (dev && !dev->flashBackendName.empty()) {
+    return dev->flashBackendName;
+  }
+  return kNandProMaxBackend;
+}
+
+inline std::string jtagBackendFor(const std::string &hardwareName) {
+  const auto dev = findDeviceByName(hardwareName);
+  if (dev && !dev->jtagBackendName.empty()) {
+    return dev->jtagBackendName;
+  }
+  return kNandProMaxBackend;
+}
+
+// Names the CPLD parts a JTAG chain scan can recognise by IDCODE.
+inline std::optional<std::string_view> findJtagPartName(uint32_t idcode) {
+  switch (idcode) {
+  case 0x06e5e093:
+  case 0x06e5c093:
+    return "XC2C64A";
+  default:
+    return std::nullopt;
+  }
+}
+
+} // namespace gxapi::backend

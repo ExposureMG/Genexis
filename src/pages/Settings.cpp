@@ -4,9 +4,21 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QSettings>
 #include <QStandardPaths>
 
 using BackendManager = gxapi::backend::BackendManager;
+
+namespace {
+QStringList toStringList(const std::vector<std::string> &values) {
+  QStringList list;
+  list.reserve(static_cast<qsizetype>(values.size()));
+  for (const auto &value : values) {
+    list.append(QString::fromStdString(value));
+  }
+  return list;
+}
+} // namespace
 
 Settings::Settings(QObject *parent)
     : QObject(parent), m_buildBackend(QStringLiteral("gxbuild3")),
@@ -71,17 +83,6 @@ void Settings::saveSettings() {
   qDebug() << "[Settings] Saved settings to" << getIniPath();
 }
 
-QString Settings::getSetting(const QString &key, const QString &defaultValue) {
-  QSettings ini(getIniPath(), QSettings::IniFormat);
-  return ini.value(QStringLiteral("Backends/") + key, defaultValue).toString();
-}
-
-void Settings::setSetting(const QString &key, const QString &value) {
-  QSettings ini(getIniPath(), QSettings::IniFormat);
-  ini.setValue(QStringLiteral("Backends/") + key, value);
-  ini.sync();
-}
-
 QString Settings::buildBackend() const { return m_buildBackend; }
 void Settings::setBuildBackend(const QString &value) {
   if (m_buildBackend != value) {
@@ -115,35 +116,17 @@ void Settings::setWirelessBackend(const QString &value) {
 }
 
 QStringList Settings::availableBuildBackends() const {
-  QStringList list;
-  for (const auto &b :
-       BackendManager::instance().getAvailableBuilderBackends()) {
-    list.append(QString::fromStdString(b));
-  }
-  return list;
+  return toStringList(BackendManager::instance().getAvailableBuilderBackends());
 }
 
 QStringList Settings::availableFlashBackends() const {
-  QStringList list;
-  for (const auto &b : BackendManager::instance().getAvailableFlashBackends()) {
-    list.append(QString::fromStdString(b));
-  }
-  return list;
+  return toStringList(BackendManager::instance().getAvailableFlashBackends());
 }
 
 QStringList Settings::availableTimingFlashBackends() const {
-  QStringList list;
-  for (const auto &b : BackendManager::instance().getAvailableJtagBackends()) {
-    list.append(QString::fromStdString(b));
-  }
-  return list;
+  return toStringList(BackendManager::instance().getAvailableJtagBackends());
 }
 
 QStringList Settings::availableWirelessBackends() const {
-  QStringList list;
-  for (const auto &b :
-       BackendManager::instance().getAvailableNetworkBackends()) {
-    list.append(QString::fromStdString(b));
-  }
-  return list;
+  return toStringList(BackendManager::instance().getAvailableNetworkBackends());
 }

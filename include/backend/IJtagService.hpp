@@ -10,7 +10,8 @@
 namespace gxapi::backend {
 
 struct JtagDeviceConfig {
-  std::string backend; 
+  // xsvftool probe: "DirtyJTAG", otherwise FTDI. Other backends ignore it.
+  std::string backend;
   uint32_t clockFrequencyHz{0};
 };
 
@@ -38,4 +39,4 @@ public:
             JtagProgressCallback progressCb = nullptr) = 0;
 };
 
-} 
+} // namespace gxapi::backend

@@ -1,7 +1,5 @@
 #include "pages/NandInfoMapper.hpp"
 
-#include <QVariantMap>
-
 #include <array>
 #include <optional>
 
@@ -193,4 +191,64 @@ NandInfoSnapshot MapDecryptedNandInfo(const AllNandInfo &info,
   }
 
   return current;
+}
+
+QVariantMap NandInfoToVariantMap(const NandInfoSnapshot &snapshot) {
+  const QVariantMap header{
+      {QStringLiteral("imageSize"), snapshot.imageSize},
+      {QStringLiteral("blockType"), snapshot.blockType},
+      {QStringLiteral("consoleTarget"), snapshot.consoleTarget},
+      {QStringLiteral("buildType"), snapshot.buildType},
+      {QStringLiteral("kernelVerOrType"),
+       snapshot.ceVersion.isEmpty() ? snapshot.buildType : snapshot.ceVersion},
+      {QStringLiteral("magic"), snapshot.headerMagic},
+      {QStringLiteral("version"), snapshot.headerVersion},
+      {QStringLiteral("patchSlots"), snapshot.patchSlots},
+  };
+  const QVariantMap smc{
+      {QStringLiteral("version"), snapshot.smcVersion},
+      {QStringLiteral("type"), snapshot.smcType},
+      {QStringLiteral("size"), snapshot.smcSize},
+      {QStringLiteral("configOffset"), snapshot.smcConfigOffset},
+  };
+  const QVariantMap bootloaders{
+      {QStringLiteral("cbVersion"), snapshot.cbVersion},
+      {QStringLiteral("cbAVersion"), snapshot.cbAVersion},
+      {QStringLiteral("cbBVersion"), snapshot.cbBVersion},
+      {QStringLiteral("cbXVersion"), snapshot.cbXVersion},
+      {QStringLiteral("cbSize"), snapshot.cbSize},
+      {QStringLiteral("cbMagic"), snapshot.cbMagic},
+      {QStringLiteral("scVersion"), snapshot.scVersion},
+      {QStringLiteral("ccVersion"), snapshot.ccVersion},
+      {QStringLiteral("cdVersion"), snapshot.cdVersion},
+      {QStringLiteral("ceVersion"), snapshot.ceVersion},
+      {QStringLiteral("cf0Version"), snapshot.cf0Version},
+      {QStringLiteral("cg0Version"), snapshot.cg0Version},
+      {QStringLiteral("cf1Version"), snapshot.cf1Version},
+      {QStringLiteral("cg1Version"), snapshot.cg1Version},
+      {QStringLiteral("cbLdv"), snapshot.cbLdv},
+      {QStringLiteral("cbPairing"), snapshot.cbPairing},
+      {QStringLiteral("cbALdv"), snapshot.cbALdv},
+      {QStringLiteral("cbAPairing"), snapshot.cbAPairing},
+      {QStringLiteral("cf0Ldv"), snapshot.cf0Ldv},
+      {QStringLiteral("cf0Pairing"), snapshot.cf0Pairing},
+      {QStringLiteral("cf1Ldv"), snapshot.cf1Ldv},
+      {QStringLiteral("cf1Pairing"), snapshot.cf1Pairing},
+      {QStringLiteral("ldvCount"), snapshot.ldvCount},
+  };
+  const QVariantMap keyvault{
+      {QStringLiteral("serialNumber"), snapshot.serialNumber},
+      {QStringLiteral("consoleId"), snapshot.consoleId},
+      {QStringLiteral("dvdKey"), snapshot.dvdKey},
+      {QStringLiteral("gameRegion"), snapshot.gameRegion},
+      {QStringLiteral("consoleType"), snapshot.consoleType},
+      {QStringLiteral("version"), snapshot.kvVersion},
+  };
+  return {
+      {QStringLiteral("header"), header},
+      {QStringLiteral("smc"), smc},
+      {QStringLiteral("bootloaders"), bootloaders},
+      {QStringLiteral("keyvault"), keyvault},
+      {QStringLiteral("components"), snapshot.components},
+  };
 }

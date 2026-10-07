@@ -2,14 +2,19 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
+import ".."
 
 Kirigami.ScrollablePage {
     id: root
 
     title: qsTr("SMC Firmware")
 
-    enabled: typeof nandController !== "undefined" && nandController.isNandLoaded && nandController.isSmcDecrypted
+    enabled: nandController.isNandLoaded && nandController.isSmcDecrypted
     opacity: enabled ? 1.0 : 0.45
+
+    NandMetadata {
+        id: nand
+    }
 
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
@@ -34,39 +39,27 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("SMC Version:")
-                text: typeof nandController !== "undefined" ? nandController.smcVersion : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.smcVersion
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("SMC Type:")
-                text: typeof nandController !== "undefined" ? nandController.smcType : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
-                Layout.fillWidth: true
+                text: nand.smcType
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("SMC Size:")
-                text: typeof nandController !== "undefined" ? nandController.smcSize : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.smcSize
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
 
-            QQC2.TextField {
+            InfoField {
                 Kirigami.FormData.label: qsTr("SMC Config Offset:")
-                text: typeof nandController !== "undefined" ? nandController.smcConfigOffset : ""
-                placeholderText: qsTr("Empty")
-                readOnly: true
+                text: nand.smcConfigOffset
                 font.family: "Monospace"
-                Layout.fillWidth: true
             }
         }
 

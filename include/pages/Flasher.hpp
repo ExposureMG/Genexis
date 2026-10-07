@@ -5,12 +5,9 @@
 #include <QStringList>
 #include <QTimer>
 #include <QVariantMap>
-#include <qqmlregistration.h>
 
 class Flasher : public QObject {
   Q_OBJECT
-  QML_ELEMENT
-  QML_SINGLETON
 
   Q_PROPERTY(bool isBusy READ isBusy NOTIFY busyStateChanged)
   Q_PROPERTY(QString connectedFlasherImage READ connectedFlasherImage NOTIFY
@@ -59,19 +56,19 @@ public:
   }
   QString detectedHardwareInfo() const { return m_detectedHardwareInfo; }
 
-  
   Q_INVOKABLE void searchNetworkDevices();
 
-  
-  
+  // A .svf/.xsvf filePath scans the JTAG chain; anything else reads the NAND
+  // flash configuration.
   Q_INVOKABLE void detectHardware(const QString &filePath = {});
 
-  
+  // operation is "Read", "Write", "Erase" or "Detect". With a .svf/.xsvf
+  // filePath, every operation except Detect programs the CPLD.
   Q_INVOKABLE void performOperation(const QString &filePath,
                                     const QString &operation,
                                     const QVariantMap &options = {});
 
-  
+  // Polled every 2 s to refresh the flasher list and connection state.
   Q_INVOKABLE void checkUsbDevices();
 
 Q_SIGNALS:
@@ -91,7 +88,10 @@ Q_SIGNALS:
   void operationFinished(bool success, const QString &message);
 
 private:
-  void updateFlasherList();
+  void syncNetworkSelection();
+  void setBusy(bool busy);
+  void finishDetection(const QString &result);
+  void finishOperation(bool success, const QString &message);
 
   bool m_isBusy{false};
   QString m_connectedFlasherImage{

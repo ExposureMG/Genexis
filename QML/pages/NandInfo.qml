@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 
@@ -11,15 +10,15 @@ Kirigami.Page {
     ListModel {
         id: subPageModel
         ListElement {
-            name: "Overview"
+            name: QT_TR_NOOP("Overview")
             pageUrl: "../components/nand/Overview.qml"
         }
         ListElement {
-            name: "Components"
+            name: QT_TR_NOOP("Components")
             pageUrl: "../components/nand/Components.qml"
         }
         ListElement {
-            name: "Keyvault"
+            name: QT_TR_NOOP("Keyvault")
             pageUrl: "../components/nand/Keyvault.qml"
         }
     }
@@ -32,7 +31,7 @@ Kirigami.Page {
             model: subPageModel
             QQC2.TabButton {
                 required property string name
-                text: name
+                text: qsTr(name)
             }
         }
     }

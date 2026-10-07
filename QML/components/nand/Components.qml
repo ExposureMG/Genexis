@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import Qt.labs.qmlmodels
 import org.kde.kirigami as Kirigami
@@ -11,517 +10,191 @@ Kirigami.ScrollablePage {
 
     signal keyvaultRequested
 
-    enabled: typeof nandController !== "undefined" && nandController.isNandLoaded
+    enabled: nandController.isNandLoaded
     opacity: enabled ? 1.0 : 0.45
 
-    property string smcConsole: typeof nandController !== "undefined" ? nandController.consoleTarget : ""
-    property string smcVersion: typeof nandController !== "undefined" ? nandController.smcVersion : ""
-    property string smcType: typeof nandController !== "undefined" ? nandController.smcType : ""
+    function versionSummary(versionStr, fallback) {
+        return qsTr("Version: %1").arg(versionStr ? versionStr : fallback);
+    }
 
-    property string cbVersion: typeof nandController !== "undefined" ? nandController.cbVersion : ""
-    property string cbSize: typeof nandController !== "undefined" ? nandController.cbSize : ""
-    property string cbMagic: typeof nandController !== "undefined" ? nandController.cbMagic : ""
-    property string cbLdv: typeof nandController !== "undefined" ? nandController.cbLdv : ""
-    property string cbPairing: typeof nandController !== "undefined" ? nandController.cbPairing : ""
+    NandMetadata {
+        id: nand
+    }
 
-    property string cbAVersion: typeof nandController !== "undefined" ? nandController.cbAVersion : ""
-    property string cbALdv: typeof nandController !== "undefined" ? nandController.cbALdv : ""
-    property string cbAPairing: typeof nandController !== "undefined" ? nandController.cbAPairing : ""
-
-    property string cbBVersion: typeof nandController !== "undefined" ? nandController.cbBVersion : ""
-
-    property string cdVersion: typeof nandController !== "undefined" ? nandController.cdVersion : ""
-    property string ceVersion: typeof nandController !== "undefined" ? nandController.ceVersion : ""
-    property string xellVersion: "0.99"
-    property string xellType: "XeLL Reloaded"
-
-    property string cf0Version: typeof nandController !== "undefined" ? nandController.cf0Version : ""
-    property string cg0Version: typeof nandController !== "undefined" ? nandController.cg0Version : ""
-    property string cf0Ldv: typeof nandController !== "undefined" ? nandController.cf0Ldv : ""
-    property string cf0Pairing: typeof nandController !== "undefined" ? nandController.cf0Pairing : ""
-
-    property string cf1Version: typeof nandController !== "undefined" ? nandController.cf1Version : ""
-    property string cg1Version: typeof nandController !== "undefined" ? nandController.cg1Version : ""
-    property string cf1Ldv: typeof nandController !== "undefined" ? nandController.cf1Ldv : ""
-    property string cf1Pairing: typeof nandController !== "undefined" ? nandController.cf1Pairing : ""
-
-    property string kvConsoleModel: typeof nandController !== "undefined" ? nandController.consoleTarget : ""
-    property string kvType: typeof nandController !== "undefined" ? nandController.consoleType : ""
-    property string kvSerial: typeof nandController !== "undefined" ? nandController.serialNumber : ""
-    property string kvConsoleId: typeof nandController !== "undefined" ? nandController.consoleId : ""
-    property string kvDvdKey: typeof nandController !== "undefined" ? nandController.dvdKey : ""
-    property string kvRegion: typeof nandController !== "undefined" ? nandController.gameRegion : ""
-
-    QQC2.Dialog {
+    ComponentDetailsDialog {
         id: smcDialog
         title: qsTr("SMC Firmware Details")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        padding: Kirigami.Units.largeSpacing
-        implicitWidth: Kirigami.Units.gridUnit * 24
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            implicitHeight: smcForm.implicitHeight
-
-            Kirigami.FormLayout {
-                id: smcForm
-                wideMode: true
-                width: parent.width
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Target:")
-                    text: root.smcConsole
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Version:")
-                    text: root.smcVersion
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Type:")
-                    text: root.smcType
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    Layout.fillWidth: true
-                }
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Target:")
+            text: nand.consoleTarget
         }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                onClicked: smcDialog.close()
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Version:")
+            text: nand.smcVersion
+            font.family: "Monospace"
+        }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Type:")
+            text: nand.smcType
         }
     }
 
-    QQC2.Dialog {
+    ComponentDetailsDialog {
         id: cbDialog
         title: qsTr("CB Details")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        padding: Kirigami.Units.largeSpacing
         implicitWidth: Kirigami.Units.gridUnit * 26
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            implicitHeight: cbForm.implicitHeight
-
-            Kirigami.FormLayout {
-                id: cbForm
-                wideMode: true
-                width: parent.width
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Version:")
-                    text: root.cbVersion
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Size:")
-                    text: root.cbSize !== "" ? root.cbSize + " bytes" : ""
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Magic:")
-                    text: root.cbMagic
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("LDV:")
-                    text: root.cbLdv
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("PD:")
-                    text: root.cbPairing
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Version:")
+            text: nand.cbVersion
+            font.family: "Monospace"
         }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                onClicked: cbDialog.close()
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Size:")
+            text: nand.cbSize !== "" ? qsTr("%1 bytes").arg(nand.cbSize) : ""
+            font.family: "Monospace"
+        }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Magic:")
+            text: nand.cbMagic
+            font.family: "Monospace"
+        }
+        InfoField {
+            Kirigami.FormData.label: qsTr("LDV:")
+            text: nand.cbLdv
+            font.family: "Monospace"
+        }
+        InfoField {
+            Kirigami.FormData.label: qsTr("PD:")
+            text: nand.cbPairing
+            font.family: "Monospace"
         }
     }
 
-    QQC2.Dialog {
+    ComponentDetailsDialog {
         id: cbADialog
         title: qsTr("CB_A Details")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        padding: Kirigami.Units.largeSpacing
         implicitWidth: Kirigami.Units.gridUnit * 26
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            implicitHeight: cbAForm.implicitHeight
-
-            Kirigami.FormLayout {
-                id: cbAForm
-                wideMode: true
-                width: parent.width
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Version:")
-                    text: root.cbAVersion
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("LDV:")
-                    text: root.cbALdv
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("PD:")
-                    text: root.cbAPairing
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Version:")
+            text: nand.cbAVersion
+            font.family: "Monospace"
         }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                onClicked: cbADialog.close()
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("LDV:")
+            text: nand.cbALdv
+            font.family: "Monospace"
+        }
+        InfoField {
+            Kirigami.FormData.label: qsTr("PD:")
+            text: nand.cbAPairing
+            font.family: "Monospace"
         }
     }
 
-    QQC2.Dialog {
+    ComponentDetailsDialog {
         id: cbBDialog
         title: qsTr("CB_B Details")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        padding: Kirigami.Units.largeSpacing
-        implicitWidth: Kirigami.Units.gridUnit * 24
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            implicitHeight: cbBForm.implicitHeight
-
-            Kirigami.FormLayout {
-                id: cbBForm
-                wideMode: true
-                width: parent.width
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Version:")
-                    text: root.cbBVersion
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-            }
-        }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                onClicked: cbBDialog.close()
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Version:")
+            text: nand.cbBVersion
+            font.family: "Monospace"
         }
     }
 
-    QQC2.Dialog {
+    ComponentDetailsDialog {
         id: cdDialog
         title: qsTr("CD Details")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        padding: Kirigami.Units.largeSpacing
-        implicitWidth: Kirigami.Units.gridUnit * 24
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            implicitHeight: cdForm.implicitHeight
-
-            Kirigami.FormLayout {
-                id: cdForm
-                wideMode: true
-                width: parent.width
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Version:")
-                    text: root.cdVersion
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-            }
-        }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                onClicked: cdDialog.close()
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Version:")
+            text: nand.cdVersion
+            font.family: "Monospace"
         }
     }
 
-    QQC2.Dialog {
+    ComponentDetailsDialog {
         id: ceDialog
         title: qsTr("CE Details")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        padding: Kirigami.Units.largeSpacing
-        implicitWidth: Kirigami.Units.gridUnit * 24
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            implicitHeight: ceForm.implicitHeight
-
-            Kirigami.FormLayout {
-                id: ceForm
-                wideMode: true
-                width: parent.width
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Version:")
-                    text: root.ceVersion
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.bold: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-            }
-        }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                onClicked: ceDialog.close()
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Version:")
+            text: nand.ceVersion
+            font.bold: true
+            font.family: "Monospace"
         }
     }
 
-    QQC2.Dialog {
+    // The backend does not report XeLL details yet.
+    ComponentDetailsDialog {
         id: xellDialog
         title: qsTr("XeLL Details")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        padding: Kirigami.Units.largeSpacing
-        implicitWidth: Kirigami.Units.gridUnit * 24
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            implicitHeight: xellForm.implicitHeight
-
-            Kirigami.FormLayout {
-                id: xellForm
-                wideMode: true
-                width: parent.width
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Version:")
-                    text: root.xellVersion
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("Variant:")
-                    text: root.xellType
-                    readOnly: true
-                    Layout.fillWidth: true
-                }
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Version:")
+            placeholderText: qsTr("Unknown")
+            font.family: "Monospace"
         }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                onClicked: xellDialog.close()
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("Variant:")
+            placeholderText: qsTr("Unknown")
         }
     }
 
-    QQC2.Dialog {
+    ComponentDetailsDialog {
         id: patch0Dialog
         title: qsTr("Patchslot 0 Details")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        padding: Kirigami.Units.largeSpacing
         implicitWidth: Kirigami.Units.gridUnit * 26
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            implicitHeight: patch0Form.implicitHeight
-
-            Kirigami.FormLayout {
-                id: patch0Form
-                wideMode: true
-                width: parent.width
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("CF Version:")
-                    text: root.cf0Version
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("CG Version:")
-                    text: root.cg0Version
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("CF LDV:")
-                    text: root.cf0Ldv
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("CF PD:")
-                    text: root.cf0Pairing
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("CF Version:")
+            text: nand.cf0Version
+            font.family: "Monospace"
         }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                onClicked: patch0Dialog.close()
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("CG Version:")
+            text: nand.cg0Version
+            font.family: "Monospace"
+        }
+        InfoField {
+            Kirigami.FormData.label: qsTr("CF LDV:")
+            text: nand.cf0Ldv
+            font.family: "Monospace"
+        }
+        InfoField {
+            Kirigami.FormData.label: qsTr("CF PD:")
+            text: nand.cf0Pairing
+            font.family: "Monospace"
         }
     }
 
-    QQC2.Dialog {
+    ComponentDetailsDialog {
         id: patch1Dialog
         title: qsTr("Patchslot 1 Details")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        padding: Kirigami.Units.largeSpacing
         implicitWidth: Kirigami.Units.gridUnit * 26
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            implicitHeight: patch1Form.implicitHeight
-
-            Kirigami.FormLayout {
-                id: patch1Form
-                wideMode: true
-                width: parent.width
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("CF Version:")
-                    text: root.cf1Version
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("CG Version:")
-                    text: root.cg1Version
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("CF LDV:")
-                    text: root.cf1Ldv
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-
-                QQC2.TextField {
-                    Kirigami.FormData.label: qsTr("CF PD:")
-                    text: root.cf1Pairing
-                    placeholderText: qsTr("Empty")
-                    readOnly: true
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                }
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("CF Version:")
+            text: nand.cf1Version
+            font.family: "Monospace"
         }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                onClicked: patch1Dialog.close()
-            }
+        InfoField {
+            Kirigami.FormData.label: qsTr("CG Version:")
+            text: nand.cg1Version
+            font.family: "Monospace"
+        }
+        InfoField {
+            Kirigami.FormData.label: qsTr("CF LDV:")
+            text: nand.cf1Ldv
+            font.family: "Monospace"
+        }
+        InfoField {
+            Kirigami.FormData.label: qsTr("CF PD:")
+            text: nand.cf1Pairing
+            font.family: "Monospace"
         }
     }
 
@@ -537,437 +210,98 @@ Kirigami.ScrollablePage {
     Kirigami.CardsListView {
         id: cardsView
         anchors.fill: parent
-        model: typeof nandController !== "undefined" ? nandController.components : []
+        model: nand.components
 
         delegate: DelegateChooser {
             role: "cardType"
 
             DelegateChoice {
                 roleValue: "smc"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: smcLayout.implicitWidth
-                        implicitHeight: smcLayout.implicitHeight
-
-                        ColumnLayout {
-                            id: smcLayout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("SMC Firmware")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Version: %1").arg(modelData.versionStr ? modelData.versionStr : root.smcVersion)
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: smcDialog.open()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("SMC Firmware")
+                    summary: root.versionSummary(modelData.versionStr, nand.smcVersion)
+                    onDetailsRequested: smcDialog.open()
                 }
             }
 
-            
             DelegateChoice {
                 roleValue: "cb"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: cbLayout.implicitWidth
-                        implicitHeight: cbLayout.implicitHeight
-
-                        ColumnLayout {
-                            id: cbLayout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("CB (2BL)")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Version: %1").arg(modelData.versionStr ? modelData.versionStr : root.cbVersion)
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: cbDialog.open()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("CB (2BL)")
+                    summary: root.versionSummary(modelData.versionStr, nand.cbVersion)
+                    onDetailsRequested: cbDialog.open()
                 }
             }
 
-            
             DelegateChoice {
                 roleValue: "cb_a"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: cbALayout.implicitWidth
-                        implicitHeight: cbALayout.implicitHeight
-
-                        ColumnLayout {
-                            id: cbALayout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("CB_A (2BL)")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Version: %1").arg(modelData.versionStr ? modelData.versionStr : root.cbAVersion)
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: cbADialog.open()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("CB_A (2BL)")
+                    summary: root.versionSummary(modelData.versionStr, nand.cbAVersion)
+                    onDetailsRequested: cbADialog.open()
                 }
             }
 
-            
             DelegateChoice {
                 roleValue: "cb_b"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: cbBLayout.implicitWidth
-                        implicitHeight: cbBLayout.implicitHeight
-
-                        ColumnLayout {
-                            id: cbBLayout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("CB_B (2BL)")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Version: %1").arg(modelData.versionStr ? modelData.versionStr : root.cbBVersion)
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: cbBDialog.open()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("CB_B (2BL)")
+                    summary: root.versionSummary(modelData.versionStr, nand.cbBVersion)
+                    onDetailsRequested: cbBDialog.open()
                 }
             }
 
-            
             DelegateChoice {
                 roleValue: "cd"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: cdLayout.implicitWidth
-                        implicitHeight: cdLayout.implicitHeight
-
-                        ColumnLayout {
-                            id: cdLayout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("CD (4BL)")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Version: %1").arg(modelData.versionStr ? modelData.versionStr : root.cdVersion)
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: cdDialog.open()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("CD (4BL)")
+                    summary: root.versionSummary(modelData.versionStr, nand.cdVersion)
+                    onDetailsRequested: cdDialog.open()
                 }
             }
 
-            
             DelegateChoice {
                 roleValue: "ce"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: ceLayout.implicitWidth
-                        implicitHeight: ceLayout.implicitHeight
-
-                        ColumnLayout {
-                            id: ceLayout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("CE (5BL / Kernel)")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Version: %1").arg(modelData.versionStr ? modelData.versionStr : root.ceVersion)
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: ceDialog.open()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("CE (5BL / Kernel)")
+                    summary: root.versionSummary(modelData.versionStr, nand.ceVersion)
+                    onDetailsRequested: ceDialog.open()
                 }
             }
 
-            
             DelegateChoice {
                 roleValue: "xell"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: xellLayout.implicitWidth
-                        implicitHeight: xellLayout.implicitHeight
-
-                        ColumnLayout {
-                            id: xellLayout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("XeLL")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Version: %1").arg(modelData.versionStr ? modelData.versionStr : root.xellVersion)
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: xellDialog.open()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("XeLL")
+                    summary: root.versionSummary(modelData.versionStr, "")
+                    onDetailsRequested: xellDialog.open()
                 }
             }
 
-            
             DelegateChoice {
                 roleValue: "patch0"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: patch0Layout.implicitWidth
-                        implicitHeight: patch0Layout.implicitHeight
-
-                        ColumnLayout {
-                            id: patch0Layout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("Patchslot 0")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Version: %1").arg(modelData.versionStr ? modelData.versionStr : root.cf0Version)
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: patch0Dialog.open()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("Patchslot 0")
+                    summary: root.versionSummary(modelData.versionStr, nand.cf0Version)
+                    onDetailsRequested: patch0Dialog.open()
                 }
             }
 
-            
             DelegateChoice {
                 roleValue: "patch1"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: patch1Layout.implicitWidth
-                        implicitHeight: patch1Layout.implicitHeight
-
-                        ColumnLayout {
-                            id: patch1Layout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("Patchslot 1")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Version: %1").arg(modelData.versionStr ? modelData.versionStr : root.cf1Version)
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: patch1Dialog.open()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("Patchslot 1")
+                    summary: root.versionSummary(modelData.versionStr, nand.cf1Version)
+                    onDetailsRequested: patch1Dialog.open()
                 }
             }
 
-            
             DelegateChoice {
                 roleValue: "keyvault"
-                Kirigami.AbstractCard {
-                    contentItem: Item {
-                        implicitWidth: keyvaultCardLayout.implicitWidth
-                        implicitHeight: keyvaultCardLayout.implicitHeight
-
-                        ColumnLayout {
-                            id: keyvaultCardLayout
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                right: parent.right
-                            }
-                            spacing: Kirigami.Units.mediumSpacing
-
-                            Kirigami.Heading {
-                                level: 2
-                                text: qsTr("Keyvault")
-                            }
-                            Kirigami.Separator {
-                                Layout.fillWidth: true
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                QQC2.Label {
-                                    text: qsTr("Serial: %1").arg(modelData.versionStr ? modelData.versionStr : (root.kvSerial !== "" ? root.kvSerial : qsTr("Encrypted")))
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                }
-                                QQC2.Button {
-                                    text: qsTr("Details…")
-                                    icon.name: "dialog-information"
-                                    onClicked: root.keyvaultRequested()
-                                }
-                            }
-                        }
-                    }
+                ComponentCard {
+                    heading: qsTr("Keyvault")
+                    summary: qsTr("Serial: %1").arg(modelData.versionStr ? modelData.versionStr : (nand.serialNumber !== "" ? nand.serialNumber : qsTr("Encrypted")))
+                    onDetailsRequested: root.keyvaultRequested()
                 }
             }
         }

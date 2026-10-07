@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
+import ".."
 
 Kirigami.ScrollablePage {
     id: root
@@ -9,9 +10,11 @@ Kirigami.ScrollablePage {
     title: qsTr("Stage 3 & Kernel")
 
     property string stage3Type: "CD"
-    property string stage3Version: "8453"
     property string kernelType: "CE"
-    property string kernelVersion: "17559"
+
+    NandMetadata {
+        id: nand
+    }
 
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
@@ -45,7 +48,7 @@ Kirigami.ScrollablePage {
 
             QQC2.TextField {
                 Kirigami.FormData.label: qsTr("Stage 3 Version:")
-                text: root.stage3Version
+                text: nand.cdVersion
                 readOnly: true
                 font.family: "Monospace"
                 Layout.fillWidth: true
@@ -60,7 +63,7 @@ Kirigami.ScrollablePage {
 
             QQC2.TextField {
                 Kirigami.FormData.label: qsTr("Kernel Version:")
-                text: root.kernelVersion
+                text: nand.ceVersion
                 readOnly: true
                 font.bold: true
                 font.family: "Monospace"

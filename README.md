@@ -27,22 +27,27 @@ Flashers:
 
 ## Platforms
 
-Full Support
-
-- Windows 10+
-- Linux
-- MacOS
-- iPadOS
-- Android
-- BSD
-
-Partial Support
-
-- iPhone (No USB Flashers)
+| Platform | Status |
+| --- | --- |
+| Linux | Supported; built and tested by the CI workflow |
+| Windows 10+ | Supported via KDE Craft (MSVC); not covered by CI |
+| macOS | Accepted by CMake, not yet tested |
+| Android | Accepted by CMake, not yet tested |
+| iPadOS | Planned |
+| iPhone | Planned (no USB flashers) |
+| BSD | Planned (CMake currently stops with "Unsupported operating system") |
 
 ## Build
 
-See [build](./docs/build.md)
+Quick start on Linux, once the dependencies in [docs/build.md](./docs/build.md)
+are installed:
+
+```bash
+git submodule update --init --recursive
+./build.sh
+```
+
+See [build](./docs/build.md) for prerequisites, options and other platforms.
 
 ## Developer Info
 
