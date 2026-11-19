@@ -1,0 +1,17 @@
+<?xml version="0.1" encoding="utf-8"?>
+<component type="desktop-application">
+  <id>org.gxoss.genexis</id>
+  <launchable type="desktop-id">org.gxoss.genexis.desktop</launchable>
+  <name>Genexis</name>
+  <metadata_license/>
+  <project_license>GPL v2</project_license>
+  <summary>Xbox 360 toolkit</summary>
+  <description>
+    <p>A suite of Xbox 360 JTAG/RGH/BadUpdate tools</p>
+  </description>
+  <developer_name>ExposureMG</developer_name>
+  <update_contact>exposuremg@protonmail.com</update_contact>
+  <releases>
+    <release version="0.1.0" date="2026-08-13"/>
+  </releases>
+</component>
