@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
+import org.gxoss.genexis
 
 Kirigami.ScrollablePage {
     id: root
@@ -16,76 +17,61 @@ Kirigami.ScrollablePage {
     signal loadRequested
     signal saveRequested(var config)
 
-    Component.onCompleted: {
-        if (typeof settingsController !== "undefined") {
-            settingsController.loadSettings();
-            buildBackendCombo.currentIndex = buildBackendCombo.model.indexOf(settingsController.buildBackend) !== -1 ? buildBackendCombo.model.indexOf(settingsController.buildBackend) : 0;
-            flashBackendCombo.currentIndex = flashBackendCombo.model.indexOf(settingsController.flashBackend) !== -1 ? flashBackendCombo.model.indexOf(settingsController.flashBackend) : 0;
-            timingBackendCombo.currentIndex = timingBackendCombo.model.indexOf(settingsController.timingFlashBackend) !== -1 ? timingBackendCombo.model.indexOf(settingsController.timingFlashBackend) : 0;
-            wirelessBackendCombo.currentIndex = wirelessBackendCombo.model.indexOf(settingsController.wirelessBackend) !== -1 ? wirelessBackendCombo.model.indexOf(settingsController.wirelessBackend) : 0;
+    function syncFromController() {
+        SettingsController.loadSettings();
+        buildBackendCombo.currentIndex = Math.max(0, buildBackendCombo.indexOfValue(SettingsController.buildBackend));
+        flashBackendCombo.currentIndex = Math.max(0, flashBackendCombo.indexOfValue(SettingsController.flashBackend));
+        timingBackendCombo.currentIndex = Math.max(0, timingBackendCombo.indexOfValue(SettingsController.timingFlashBackend));
+        wirelessBackendCombo.currentIndex = Math.max(0, wirelessBackendCombo.indexOfValue(SettingsController.wirelessBackend));
+    }
+
+    Component.onCompleted: syncFromController()
+
+    Kirigami.FormLayout {
+        QQC2.ComboBox {
+            id: buildBackendCombo
+            Kirigami.FormData.label: qsTr("Build Backend:")
+            Layout.fillWidth: true
+            model: SettingsController.availableBuildBackends
+        }
+
+        QQC2.ComboBox {
+            id: flashBackendCombo
+            Kirigami.FormData.label: qsTr("Flash Backend:")
+            Layout.fillWidth: true
+            model: SettingsController.availableFlashBackends
+        }
+
+        QQC2.ComboBox {
+            id: timingBackendCombo
+            Kirigami.FormData.label: qsTr("Timing Flash Backend:")
+            Layout.fillWidth: true
+            model: SettingsController.availableTimingFlashBackends
+        }
+
+        QQC2.ComboBox {
+            id: wirelessBackendCombo
+            Kirigami.FormData.label: qsTr("Wireless Backend:")
+            Layout.fillWidth: true
+            model: SettingsController.availableWirelessBackends
         }
     }
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Kirigami.Units.largeSpacing
-        spacing: Kirigami.Units.largeSpacing
-
-        Kirigami.FormLayout {
-            Layout.fillWidth: true
-
-            QQC2.ComboBox {
-                id: buildBackendCombo
-                Kirigami.FormData.label: qsTr("Build Backend:")
-                Layout.fillWidth: true
-                model: (typeof settingsController !== "undefined" && settingsController.availableBuildBackends.length > 0) ? settingsController.availableBuildBackends : ["gxbuild3"]
-            }
-
-            QQC2.ComboBox {
-                id: flashBackendCombo
-                Kirigami.FormData.label: qsTr("Flash Backend:")
-                Layout.fillWidth: true
-                model: (typeof settingsController !== "undefined" && settingsController.availableFlashBackends.length > 0) ? settingsController.availableFlashBackends : ["NandProMax", "FTDI2SPI", "UpdClient"]
-            }
-
-            QQC2.ComboBox {
-                id: timingBackendCombo
-                Kirigami.FormData.label: qsTr("Timing Flash Backend:")
-                Layout.fillWidth: true
-                model: (typeof settingsController !== "undefined" && settingsController.availableTimingFlashBackends.length > 0) ? settingsController.availableTimingFlashBackends : ["NandProMax", "xsvftool"]
-            }
-
-            QQC2.ComboBox {
-                id: wirelessBackendCombo
-                Kirigami.FormData.label: qsTr("Wireless Backend:")
-                Layout.fillWidth: true
-                model: (typeof settingsController !== "undefined" && settingsController.availableWirelessBackends.length > 0) ? settingsController.availableWirelessBackends : ["UpdClient"]
-            }
-        }
-
-        Item {
-            Layout.fillHeight: true
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 18
-            Layout.alignment: Qt.AlignHCenter
+    footer: QQC2.ToolBar {
+        contentItem: RowLayout {
             spacing: Kirigami.Units.mediumSpacing
+
+            Item {
+                Layout.fillWidth: true
+            }
 
             QQC2.Button {
                 id: loadButton
                 text: qsTr("Load")
                 icon.name: "document-open"
-                Layout.fillWidth: true
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 8
                 onClicked: {
-                    if (typeof settingsController !== "undefined") {
-                        settingsController.loadSettings();
-                        buildBackendCombo.currentIndex = buildBackendCombo.model.indexOf(settingsController.buildBackend) !== -1 ? buildBackendCombo.model.indexOf(settingsController.buildBackend) : 0;
-                        flashBackendCombo.currentIndex = flashBackendCombo.model.indexOf(settingsController.flashBackend) !== -1 ? flashBackendCombo.model.indexOf(settingsController.flashBackend) : 0;
-                        timingBackendCombo.currentIndex = timingBackendCombo.model.indexOf(settingsController.timingFlashBackend) !== -1 ? timingBackendCombo.model.indexOf(settingsController.timingFlashBackend) : 0;
-                        wirelessBackendCombo.currentIndex = wirelessBackendCombo.model.indexOf(settingsController.wirelessBackend) !== -1 ? wirelessBackendCombo.model.indexOf(settingsController.wirelessBackend) : 0;
-                    }
+                    root.syncFromController();
                     root.loadRequested();
                 }
             }
@@ -95,15 +81,13 @@ Kirigami.ScrollablePage {
                 text: qsTr("Save")
                 icon.name: "document-save"
                 highlighted: true
-                Layout.fillWidth: true
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 8
                 onClicked: {
-                    if (typeof settingsController !== "undefined") {
-                        settingsController.buildBackend = root.buildBackend;
-                        settingsController.flashBackend = root.flashBackend;
-                        settingsController.timingFlashBackend = root.timingFlashBackend;
-                        settingsController.wirelessBackend = root.wirelessBackend;
-                        settingsController.saveSettings();
-                    }
+                    SettingsController.buildBackend = root.buildBackend;
+                    SettingsController.flashBackend = root.flashBackend;
+                    SettingsController.timingFlashBackend = root.timingFlashBackend;
+                    SettingsController.wirelessBackend = root.wirelessBackend;
+                    SettingsController.saveSettings();
                     var config = {
                         "buildBackend": root.buildBackend,
                         "flashBackend": root.flashBackend,
@@ -112,6 +96,10 @@ Kirigami.ScrollablePage {
                     };
                     root.saveRequested(config);
                 }
+            }
+
+            Item {
+                Layout.fillWidth: true
             }
         }
     }

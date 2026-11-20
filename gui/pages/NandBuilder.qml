@@ -4,10 +4,11 @@ import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 import "../components"
 
-Kirigami.ScrollablePage {
+Kirigami.Page {
     id: root
 
     title: qsTr("NAND Builder")
+    padding: 0
 
     NandBuilder {
         anchors.fill: parent

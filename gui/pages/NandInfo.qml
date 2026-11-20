@@ -8,32 +8,24 @@ Kirigami.Page {
 
     title: qsTr("NAND Info")
 
-    ListModel {
-        id: subPageModel
-        ListElement {
-            name: "Overview"
-            pageUrl: "../components/nand/Overview.qml"
-        }
-        ListElement {
-            name: "Components"
-            pageUrl: "../components/nand/Components.qml"
-        }
-        ListElement {
-            name: "Keyvault"
-            pageUrl: "../components/nand/Keyvault.qml"
-        }
-    }
+    readonly property var pageUrls: [
+        "../components/nand/Overview.qml",
+        "../components/nand/Components.qml",
+        "../components/nand/Keyvault.qml"
+    ]
 
     header: QQC2.TabBar {
         id: tabBar
         currentIndex: 0
 
-        Repeater {
-            model: subPageModel
-            QQC2.TabButton {
-                required property string name
-                text: name
-            }
+        QQC2.TabButton {
+            text: qsTr("Overview")
+        }
+        QQC2.TabButton {
+            text: qsTr("Components")
+        }
+        QQC2.TabButton {
+            text: qsTr("Keyvault")
         }
     }
 
@@ -41,7 +33,7 @@ Kirigami.Page {
         id: pageLoader
         anchors.fill: parent
         anchors.margins: Kirigami.Units.largeSpacing
-        source: subPageModel.get(tabBar.currentIndex).pageUrl
+        source: root.pageUrls[tabBar.currentIndex]
 
         Connections {
             target: pageLoader.item

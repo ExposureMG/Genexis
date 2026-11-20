@@ -10,6 +10,7 @@ Kirigami.Dialog {
     preferredWidth: Kirigami.Units.gridUnit * 30
     preferredHeight: Kirigami.Units.gridUnit * 20
     padding: Kirigami.Units.largeSpacing
+    standardButtons: Kirigami.Dialog.Close
 
     property alias logText: consoleText.text
     property bool showProgress: false
@@ -17,16 +18,15 @@ Kirigami.Dialog {
     property string statusText: ""
 
     function appendLog(text) {
-        consoleText.text += text + "\n";
+        consoleText.append(text);
     }
 
     function clearLog() {
-        consoleText.text = "";
+        consoleText.clear();
     }
 
     ColumnLayout {
         spacing: Kirigami.Units.mediumSpacing
-        width: parent ? parent.width : undefined
 
         ColumnLayout {
             Layout.fillWidth: true
@@ -53,9 +53,12 @@ Kirigami.Dialog {
             Layout.fillWidth: true
             Layout.fillHeight: true
             implicitHeight: Kirigami.Units.gridUnit * 12
-            color: "#1e1e1e"
+            Kirigami.Theme.colorSet: Kirigami.Theme.View
+            Kirigami.Theme.inherit: false
+            color: Kirigami.Theme.backgroundColor
             radius: Kirigami.Units.smallSpacing
-            border.color: Qt.rgba(1, 1, 1, 0.1)
+            border.width: 1
+            border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.2)
 
             QQC2.ScrollView {
                 anchors.fill: parent
@@ -67,26 +70,15 @@ Kirigami.Dialog {
                     readOnly: true
                     font.family: "Monospace"
                     font.pointSize: Kirigami.Theme.smallFont.pointSize
-                    color: "#00ff66"
+                    color: Kirigami.Theme.textColor
                     background: null
                     selectByMouse: true
                     wrapMode: Text.Wrap
                     onTextChanged: {
-                        cursorPosition = text.length;
+                        cursorPosition = length;
                     }
                 }
             }
-        }
-    }
-
-    footer: QQC2.DialogButtonBox {
-        alignment: Qt.AlignRight
-
-        QQC2.Button {
-            text: qsTr("Close")
-            icon.name: "dialog-close"
-            QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.RejectRole
-            onClicked: root.close()
         }
     }
 }

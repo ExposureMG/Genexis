@@ -23,8 +23,8 @@ Kirigami.ApplicationWindow {
         pageTitle: root.pageStack.currentItem ? root.pageStack.currentItem.title : qsTr("Genexis")
 
         onMenuRequested: root.globalDrawer.drawerOpen = !root.globalDrawer.drawerOpen
-        onFileOpened: (filePath, key) => {
-            NandSession.openFile(filePath, key);
+        onFileOpened: (fileUrl, key) => {
+            NandSession.openFile(fileUrl, key);
         }
     }
 
@@ -114,10 +114,6 @@ Kirigami.ApplicationWindow {
         if (typeof status === "string") {
             globalConsoleDialog.statusText = status;
         }
-    }
-
-    function closeConsole() {
-        globalConsoleDialog.close();
     }
 
     function openOpenFileDialog() {

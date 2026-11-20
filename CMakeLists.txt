@@ -108,19 +108,17 @@ qt_add_qml_module(genexis_core
     QML_FILES
         gui/Main.qml
         gui/components/ConsoleDialog.qml
-        gui/components/KeyvaultSheet.qml
         gui/components/NandBuilder.qml
         gui/components/NandBuilderAdvanced.qml
         gui/components/NandBuilderDonor.qml
         gui/components/NandBuilderSimple.qml
+        gui/components/PatchesDialog.qml
         gui/components/StatusBar.qml
+        gui/components/nand/ComponentCard.qml
+        gui/components/nand/ComponentDetailDialog.qml
         gui/components/nand/Components.qml
         gui/components/nand/Keyvault.qml
         gui/components/nand/Overview.qml
-        gui/components/nand/parts/Bootloaders.qml
-        gui/components/nand/parts/Kernel.qml
-        gui/components/nand/parts/Smc.qml
-        gui/components/nand/parts/Updates.qml
         gui/pages/BadUpdate.qml
         gui/pages/Flasher.qml
         gui/pages/Home.qml
@@ -129,9 +127,6 @@ qt_add_qml_module(genexis_core
         gui/pages/Settings.qml
     RESOURCES
         gui/assets/icons/loading-gear.svg
-        gui/assets/icons/loading-gear-alt.svg
-        gui/assets/icons/settings-black.svg
-        gui/assets/icons/settings-trans.svg
         gui/assets/vendor/demon.png
         gui/assets/vendor/jrp.png
         gui/assets/vendor/mtx.png

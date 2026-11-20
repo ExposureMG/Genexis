@@ -8,7 +8,6 @@ Item {
     id: root
 
     property int currentTabIndex: 0
-    property string buildLogText: ""
 
     Connections {
         target: BuilderController
@@ -16,7 +15,6 @@ Item {
         function onBuildStarted() {
             var timestamp = new Date().toLocaleTimeString();
             var initMsg = "[" + timestamp + "] Initiating NAND build operation...\n";
-            root.buildLogText = initMsg;
             var appWin = root.Window ? root.Window.window : null;
             if (appWin && typeof appWin.showConsole === "function") {
                 appWin.showConsole(qsTr("NAND Builder Output"), initMsg, true);
@@ -24,8 +22,6 @@ Item {
         }
 
         function onBuildProgress(percentage, status) {
-            var line = "[" + percentage + "%] " + status + "\n";
-            root.buildLogText += line;
             var appWin = root.Window ? root.Window.window : null;
             if (appWin) {
                 if (typeof appWin.updateConsoleProgress === "function") {
@@ -47,7 +43,6 @@ Item {
             } else {
                 endLog += "\n[ERROR] NAND Image creation failed.\n";
             }
-            root.buildLogText += endLog;
 
             var appWin = root.Window ? root.Window.window : null;
             if (appWin) {

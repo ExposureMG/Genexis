@@ -3,6 +3,8 @@ import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import QtQuick.Dialogs
 import org.kde.kirigami as Kirigami
+import org.gxoss.genexis
+import "../components"
 
 Kirigami.ScrollablePage {
     id: root
@@ -13,88 +15,13 @@ Kirigami.ScrollablePage {
     property alias payload: payloadCombo.currentText
     property var activePatches: []
 
-    signal saveRequested(string filePath, var config)
+    signal saveRequested(url fileUrl, var config)
 
-    QQC2.Dialog {
+    PatchesDialog {
         id: patchesDialog
-        title: qsTr("Configure Patches")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 18
-        implicitHeight: Kirigami.Units.gridUnit * 16
-
-        property var tempStates: ({})
-
-        onAboutToShow: {
-            var states = {};
-            for (var i = 0; i < patchesModel.count; i++) {
-                var patchName = patchesModel.get(i).name;
-                states[patchName] = root.activePatches.indexOf(patchName) !== -1;
-            }
-            tempStates = states;
-        }
-
-        ListModel {
-            id: patchesModel
-            ListElement {
-                name: "nohdmiwait"
-                label: "nohdmiwait"
-            }
-            ListElement {
-                name: "USBdsec"
-                label: "USBdsec"
-            }
-        }
-
-        contentItem: QQC2.ScrollView {
-            clip: true
-            ListView {
-                id: patchesListView
-                model: patchesModel
-                delegate: QQC2.CheckDelegate {
-                    required property string name
-                    required property string label
-                    required property int index
-
-                    width: patchesListView.width
-                    text: label
-                    checked: patchesDialog.tempStates[name] || false
-                    onCheckedChanged: {
-                        var updated = Object.assign({}, patchesDialog.tempStates);
-                        updated[name] = checked;
-                        patchesDialog.tempStates = updated;
-                    }
-                }
-            }
-        }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-
-            QQC2.Button {
-                text: qsTr("Close")
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.RejectRole
-                onClicked: patchesDialog.reject()
-            }
-
-            QQC2.Button {
-                text: qsTr("Save")
-                highlighted: true
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.AcceptRole
-                onClicked: {
-                    var selected = [];
-                    for (var i = 0; i < patchesModel.count; i++) {
-                        var patchName = patchesModel.get(i).name;
-                        if (patchesDialog.tempStates[patchName]) {
-                            selected.push(patchName);
-                        }
-                    }
-                    root.activePatches = selected;
-                    patchesDialog.accept();
-                }
-            }
-        }
+        availablePatches: ["nohdmiwait", "USBdsec"]
+        selectedPatches: root.activePatches
+        onPatchesAccepted: patches => root.activePatches = patches
     }
 
     FileDialog {
@@ -107,73 +34,70 @@ Kirigami.ScrollablePage {
                 "payload": root.payload,
                 "patches": root.activePatches
             };
-            console.log("BadUpdate Save As requested for file:", selectedFile, JSON.stringify(config));
             root.saveRequested(selectedFile, config);
         }
     }
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Kirigami.Units.largeSpacing
-        spacing: Kirigami.Units.largeSpacing
-
-        Kirigami.FormLayout {
+    Kirigami.FormLayout {
+        QQC2.ComboBox {
+            id: entryCombo
+            Kirigami.FormData.label: qsTr("Entry:")
             Layout.fillWidth: true
-
-            QQC2.ComboBox {
-                id: entryCombo
-                Kirigami.FormData.label: qsTr("Entry:")
-                Layout.fillWidth: true
-                model: ["Rock Band Blitz", "Avatar"]
-            }
-
-            QQC2.ComboBox {
-                id: payloadCombo
-                Kirigami.FormData.label: qsTr("Payload:")
-                Layout.fillWidth: true
-                model: ["FreeMyXe", "XeUnshackle"]
-            }
-
-            RowLayout {
-                Kirigami.FormData.label: qsTr("Patches:")
-                Layout.fillWidth: true
-                spacing: Kirigami.Units.smallSpacing
-
-                QQC2.Button {
-                    id: patchesButton
-                    text: root.activePatches.length > 0 ? qsTr("Patches (%1 selected)").arg(root.activePatches.length) : qsTr("Patches")
-                    icon.name: "preferences-system-patches"
-                    onClicked: patchesDialog.open()
-                }
-
-                QQC2.Label {
-                    visible: root.activePatches.length > 0
-                    text: root.activePatches.join(", ")
-                    color: Kirigami.Theme.disabledTextColor
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-            }
+            model: ["Rock Band Blitz", "Avatar"]
         }
 
-        Item {
-            Layout.fillHeight: true
+        QQC2.ComboBox {
+            id: payloadCombo
+            Kirigami.FormData.label: qsTr("Payload:")
+            Layout.fillWidth: true
+            model: ["FreeMyXe", "XeUnshackle"]
         }
 
-        QQC2.Button {
-            id: saveAsButton
-            text: qsTr("Save As…")
-            icon.name: "system-run"
-            highlighted: true
+        RowLayout {
+            Kirigami.FormData.label: qsTr("Patches:")
             Layout.fillWidth: true
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 16
-            Layout.alignment: Qt.AlignHCenter
-            onClicked: saveFileDialog.open()
+            spacing: Kirigami.Units.smallSpacing
+
+            QQC2.Button {
+                id: patchesButton
+                text: root.activePatches.length > 0 ? qsTr("Patches (%1 selected)").arg(root.activePatches.length) : qsTr("Patches")
+                icon.name: "preferences-system-patches"
+                onClicked: patchesDialog.open()
+            }
+
+            QQC2.Label {
+                visible: root.activePatches.length > 0
+                text: root.activePatches.join(", ")
+                color: Kirigami.Theme.disabledTextColor
+                elide: Text.ElideRight
+                Layout.fillWidth: true
+            }
+        }
+    }
+
+    footer: QQC2.ToolBar {
+        contentItem: RowLayout {
+            Item {
+                Layout.fillWidth: true
+            }
+
+            QQC2.Button {
+                id: saveAsButton
+                text: qsTr("Save As…")
+                icon.name: "system-run"
+                highlighted: true
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 16
+                onClicked: saveFileDialog.open()
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
         }
     }
 
     Connections {
-        target: typeof badUpdateController !== "undefined" ? badUpdateController : null
+        target: BadUpdateController
         ignoreUnknownSignals: true
         function onErrorOccurred(errorMessage) {
             var appWin = root.Window ? root.Window.window : null;

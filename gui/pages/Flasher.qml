@@ -11,72 +11,54 @@ Kirigami.ScrollablePage {
     title: qsTr("Flasher")
 
     property string selectedFilePath: NandSession.loadedFilePath
-    property alias operation: operationCombo.currentText
+    property alias operation: operationCombo.currentValue
     property string logText: qsTr("[INFO] Flasher initialized.\n[INFO] Ready for operation.\n")
 
     function getActionButtonText() {
         var ext = root.selectedFilePath.split('.').pop().toLowerCase();
         var isJtag = (ext === "svf" || ext === "xsvf");
 
-        if (operationCombo.currentText === qsTr("Detect")) {
+        switch (root.operation) {
+        case "detect":
             return isJtag ? qsTr("Detect JTAG Chain") : qsTr("Detect Flash Config");
-        } else if (operationCombo.currentText === qsTr("Read")) {
+        case "read":
             return qsTr("Read NAND");
-        } else if (operationCombo.currentText === qsTr("Erase")) {
+        case "erase":
             return qsTr("Erase NAND");
-        } else if (operationCombo.currentText === qsTr("Write")) {
+        case "write":
             return isJtag ? qsTr("Flash CPLD") : qsTr("Write NAND");
+        default:
+            return qsTr("Execute");
         }
-        return qsTr("Execute");
     }
 
-    QQC2.Dialog {
+    Kirigami.Dialog {
         id: timingWizardDialog
         title: qsTr("Timing Wizard")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 22
-        implicitHeight: Kirigami.Units.gridUnit * 12
+        preferredWidth: Kirigami.Units.gridUnit * 22
+        padding: Kirigami.Units.largeSpacing
+        standardButtons: Kirigami.Dialog.Close
 
-        contentItem: ColumnLayout {
-            spacing: Kirigami.Units.mediumSpacing
-            QQC2.Label {
-                text: qsTr("CPLD Timing Wizard stub")
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-            }
-        }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-            QQC2.Button {
-                text: qsTr("Close")
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.RejectRole
-                onClicked: timingWizardDialog.close()
-            }
+        QQC2.Label {
+            text: qsTr("CPLD Timing Wizard stub")
+            wrapMode: Text.WordWrap
         }
     }
 
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Kirigami.Units.largeSpacing
         spacing: Kirigami.Units.largeSpacing
 
-        
         Kirigami.AbstractCard {
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignHCenter
 
             contentItem: Item {
                 implicitHeight: Kirigami.Units.gridUnit * 9
-                Layout.fillWidth: true
 
                 Image {
                     anchors.centerIn: parent
                     width: Math.min(parent.width, Kirigami.Units.gridUnit * 14)
                     height: parent.height
-                    source: (typeof flasherController !== "undefined") ? flasherController.connectedFlasherImage : "qrc:/qt/qml/org/gxoss/genexis/gui/assets/vendor/noflasher.png"
+                    source: FlasherController.connectedFlasherImage || "qrc:/qt/qml/org/gxoss/genexis/gui/assets/vendor/noflasher.png"
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     mipmap: true
@@ -91,43 +73,35 @@ Kirigami.ScrollablePage {
                 id: flasherCombo
                 Kirigami.FormData.label: qsTr("Flasher:")
                 Layout.fillWidth: true
-                model: (typeof flasherController !== "undefined") ? flasherController.availableFlashers : ["None", "UpdClient (Network)"]
-                currentIndex: (typeof flasherController !== "undefined") ? model.indexOf(flasherController.selectedFlasher) : 0
-                onCurrentTextChanged: {
-                    if (typeof flasherController !== "undefined" && currentText !== "") {
-                        flasherController.setSelectedFlasher(currentText);
+                model: FlasherController.availableFlashers
+                currentIndex: Math.max(0, indexOfValue(FlasherController.selectedFlasher))
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        FlasherController.setSelectedFlasher(value);
                     }
                 }
             }
 
-            
             RowLayout {
                 id: ipRow
                 Kirigami.FormData.label: qsTr("IP:")
                 Layout.fillWidth: true
-                visible: typeof flasherController !== "undefined" && flasherController.isUpdClientSelected
+                visible: FlasherController.isUpdClientSelected
                 spacing: Kirigami.Units.smallSpacing
 
                 QQC2.TextField {
                     id: ipField
                     Layout.fillWidth: true
                     placeholderText: qsTr("192.168.1.xxx")
-                    text: (typeof flasherController !== "undefined") ? flasherController.targetIp : ""
-                    onTextChanged: {
-                        if (typeof flasherController !== "undefined") {
-                            flasherController.setTargetIp(text);
-                        }
-                    }
+                    text: FlasherController.targetIp
+                    onTextEdited: FlasherController.setTargetIp(text)
                 }
 
                 QQC2.Button {
                     text: qsTr("Search")
                     icon.name: "system-search"
-                    onClicked: {
-                        if (typeof flasherController !== "undefined") {
-                            flasherController.searchNetworkDevices();
-                        }
-                    }
+                    onClicked: FlasherController.searchNetworkDevices()
                 }
             }
 
@@ -135,14 +109,12 @@ Kirigami.ScrollablePage {
                 id: deviceNetworkCombo
                 Kirigami.FormData.label: qsTr("Device:")
                 Layout.fillWidth: true
-                visible: typeof flasherController !== "undefined" && flasherController.isUpdClientSelected
-                model: (typeof flasherController !== "undefined") ? flasherController.detectedNetworkDevices : []
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        var ipPart = currentText.split(' ')[0];
-                        if (typeof flasherController !== "undefined") {
-                            flasherController.setTargetIp(ipPart);
-                        }
+                visible: FlasherController.isUpdClientSelected
+                model: FlasherController.detectedNetworkDevices
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        FlasherController.setTargetIp(value.split(' ')[0]);
                     }
                 }
             }
@@ -152,8 +124,8 @@ Kirigami.ScrollablePage {
                 Kirigami.FormData.label: qsTr("Detected:")
                 Layout.fillWidth: true
                 readOnly: true
-                enabled: typeof flasherController === "undefined" || !flasherController.isUpdClientSelected
-                text: (typeof flasherController !== "undefined") ? flasherController.detectedHardwareInfo : qsTr("000000")
+                enabled: !FlasherController.isUpdClientSelected
+                text: FlasherController.detectedHardwareInfo
             }
 
             QQC2.TextField {
@@ -168,7 +140,14 @@ Kirigami.ScrollablePage {
                 id: operationCombo
                 Kirigami.FormData.label: qsTr("Operation:")
                 Layout.fillWidth: true
-                model: [qsTr("Read"), qsTr("Erase"), qsTr("Write"), qsTr("Detect")]
+                textRole: "text"
+                valueRole: "value"
+                model: [
+                    { text: qsTr("Read"), value: "read" },
+                    { text: qsTr("Erase"), value: "erase" },
+                    { text: qsTr("Write"), value: "write" },
+                    { text: qsTr("Detect"), value: "detect" }
+                ]
             }
 
             QQC2.Button {
@@ -181,82 +160,81 @@ Kirigami.ScrollablePage {
                 onClicked: timingWizardDialog.open()
             }
         }
+    }
 
-        Item {
-            Layout.fillHeight: true
-        }
-
-        Connections {
-            target: typeof flasherController !== "undefined" ? flasherController : null
-            ignoreUnknownSignals: true
-            function onLogOutput(message) {
-                root.logText += message + "\n";
-                var appWin = root.Window ? root.Window.window : null;
-                if (appWin && typeof appWin.appendConsoleLog === "function") {
-                    appWin.appendConsoleLog(message);
-                }
-            }
-            function onProgressUpdated(progress, status) {
-                var appWin = root.Window ? root.Window.window : null;
-                if (appWin && typeof appWin.updateConsoleProgress === "function") {
-                    appWin.updateConsoleProgress(Math.round(progress * 100), status);
-                }
-            }
-            function onOperationFinished(success, message) {
-                var appWin = root.Window ? root.Window.window : null;
-                if (appWin && typeof appWin.appendConsoleLog === "function") {
-                    appWin.appendConsoleLog(message);
-                }
+    Connections {
+        target: FlasherController
+        ignoreUnknownSignals: true
+        function onLogOutput(message) {
+            root.logText += message + "\n";
+            var appWin = root.Window ? root.Window.window : null;
+            if (appWin && typeof appWin.appendConsoleLog === "function") {
+                appWin.appendConsoleLog(message);
             }
         }
+        function onProgressUpdated(percentage, status) {
+            var appWin = root.Window ? root.Window.window : null;
+            if (appWin && typeof appWin.updateConsoleProgress === "function") {
+                appWin.updateConsoleProgress(percentage, status);
+            }
+        }
+        function onOperationFinished(success, message) {
+            var appWin = root.Window ? root.Window.window : null;
+            if (appWin && typeof appWin.appendConsoleLog === "function") {
+                appWin.appendConsoleLog(message);
+            }
+        }
+    }
 
-        QQC2.Button {
-            id: actionButton
-            text: root.getActionButtonText()
-            icon.name: "system-run"
-            highlighted: true
-            enabled: typeof flasherController === "undefined" || !flasherController.isBusy
-            Layout.fillWidth: true
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 18
-            Layout.alignment: Qt.AlignHCenter
+    footer: QQC2.ToolBar {
+        contentItem: RowLayout {
+            Item {
+                Layout.fillWidth: true
+            }
 
-            onClicked: {
-                var op = operationCombo.currentText;
-                var isWrite = (op === qsTr("Write"));
-                var ext = root.selectedFilePath.split('.').pop().toLowerCase();
-                var isJtag = (ext === "svf" || ext === "xsvf");
+            QQC2.Button {
+                id: actionButton
+                text: root.getActionButtonText()
+                icon.name: "system-run"
+                highlighted: true
+                enabled: !FlasherController.isBusy
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 18
 
-                if ((isWrite || isJtag) && op !== qsTr("Detect") && op !== qsTr("Read") && op !== qsTr("Erase") && root.selectedFilePath === "") {
+                onClicked: {
+                    var op = root.operation;
+
+                    if (op === "write" && root.selectedFilePath === "") {
+                        var appWin = root.Window ? root.Window.window : null;
+                        if (appWin && typeof appWin.showError === "function") {
+                            appWin.showError(qsTr("Flasher Error"), qsTr("Please select a target file before performing this operation."));
+                        }
+                        return;
+                    }
+
+                    if (op === "detect") {
+                        FlasherController.detectHardware(root.selectedFilePath);
+                        return;
+                    }
+
+                    var timestamp = new Date().toLocaleTimeString();
+                    var initLog = "[" + timestamp + "] Initiating " + operationCombo.currentText + " operation...\n";
+                    if (root.selectedFilePath !== "") {
+                        initLog += "[" + timestamp + "] Target file: " + root.selectedFilePath + "\n";
+                    }
+
+                    root.logText += initLog;
+
                     var appWin = root.Window ? root.Window.window : null;
-                    if (appWin && typeof appWin.showError === "function") {
-                        appWin.showError(qsTr("Flasher Error"), qsTr("Please select a target file before performing this operation."));
+                    if (appWin && typeof appWin.showConsole === "function") {
+                        appWin.showConsole(qsTr("Flasher Console"), initLog, true);
                     }
-                    return;
-                }
 
-                if (op === qsTr("Detect")) {
-                    if (typeof flasherController !== "undefined") {
-                        flasherController.detectHardware(root.selectedFilePath);
-                    }
-                    return;
+                    FlasherController.performOperation(root.selectedFilePath, op, {});
                 }
+            }
 
-                var timestamp = new Date().toLocaleTimeString();
-                var initLog = "[" + timestamp + "] Initiating " + op + " operation...\n";
-                if (root.selectedFilePath !== "") {
-                    initLog += "[" + timestamp + "] Target file: " + root.selectedFilePath + "\n";
-                }
-
-                root.logText += initLog;
-
-                var appWin = root.Window ? root.Window.window : null;
-                if (appWin && typeof appWin.showConsole === "function") {
-                    appWin.showConsole(qsTr("Flasher Console"), initLog, true);
-                }
-
-                if (typeof flasherController !== "undefined") {
-                    flasherController.performOperation(root.selectedFilePath, op, {});
-                }
+            Item {
+                Layout.fillWidth: true
             }
         }
     }

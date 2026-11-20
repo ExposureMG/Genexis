@@ -5,11 +5,12 @@ import QtQuick.Dialogs
 import org.kde.kirigami as Kirigami
 import org.gxoss.genexis
 
-Item {
+Kirigami.ScrollablePage {
     id: root
 
     property alias cpuKey: cpuKeyField.text
-    property alias keyvaultPath: kvPathField.text
+    property url keyvaultUrl
+    property bool useGenericKeyvault: false
     property alias cbLdv: cbLdvSpinBox.value
     property alias cfLdv: cfLdvSpinBox.value
     property alias pairingData: pairingDataField.text
@@ -36,88 +37,24 @@ Item {
         title: qsTr("Select Keyvault File")
         nameFilters: [qsTr("Keyvault Files (*.bin *.kv)"), qsTr("All Files (*)")]
         onAccepted: {
-            kvPathField.text = kvFileDialog.selectedFile.toString().replace("file://", "");
+            root.useGenericKeyvault = false;
+            root.keyvaultUrl = kvFileDialog.selectedFile;
         }
     }
 
-    QQC2.Dialog {
+    PatchesDialog {
         id: patchesDialog
-        title: qsTr("Configure Patches")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 18
-        implicitHeight: Kirigami.Units.gridUnit * 16
-
-        property var tempStates: ({})
-
-        onAboutToShow: {
-            var states = {};
-            var list = BuilderController.availablePatches;
-            for (var i = 0; i < list.length; i++) {
-                var patchName = list[i];
-                states[patchName] = root.activePatches.indexOf(patchName) !== -1;
-            }
-            tempStates = states;
-        }
-
-        contentItem: QQC2.ScrollView {
-            clip: true
-            ListView {
-                id: patchesListView
-                model: BuilderController.availablePatches
-                delegate: QQC2.CheckDelegate {
-                    required property string modelData
-
-                    width: patchesListView.width
-                    text: modelData
-                    checked: patchesDialog.tempStates[modelData] || false
-                    onCheckedChanged: {
-                        var updated = Object.assign({}, patchesDialog.tempStates);
-                        updated[modelData] = checked;
-                        patchesDialog.tempStates = updated;
-                    }
-                }
-            }
-        }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-
-            QQC2.Button {
-                text: qsTr("Close")
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.RejectRole
-                onClicked: patchesDialog.reject()
-            }
-
-            QQC2.Button {
-                text: qsTr("Save")
-                highlighted: true
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.AcceptRole
-                onClicked: {
-                    var selected = [];
-                    var list = BuilderController.availablePatches;
-                    for (var i = 0; i < list.length; i++) {
-                        var patchName = list[i];
-                        if (patchesDialog.tempStates[patchName]) {
-                            selected.push(patchName);
-                        }
-                    }
-                    root.activePatches = selected;
-                    patchesDialog.accept();
-                }
-            }
-        }
+        availablePatches: BuilderController.availablePatches
+        selectedPatches: root.activePatches
+        onPatchesAccepted: patches => root.activePatches = patches
     }
 
-    QQC2.Dialog {
+    Kirigami.Dialog {
         id: optionsDialog
         title: qsTr("Advanced xeBuild Options")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 22
-        implicitHeight: Kirigami.Units.gridUnit * 20
+        preferredWidth: Kirigami.Units.gridUnit * 22
+        padding: Kirigami.Units.largeSpacing
+        standardButtons: Kirigami.Dialog.Save | Kirigami.Dialog.Cancel
 
         property var tempOptions: ({})
 
@@ -125,57 +62,34 @@ Item {
             tempOptions = Object.assign({}, root.advancedOptions);
         }
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            Kirigami.FormLayout {
-                QQC2.CheckBox {
-                    Kirigami.FormData.label: qsTr("Disable FCrt:")
-                    checked: optionsDialog.tempOptions["nofcrt"] || false
-                    onCheckedChanged: optionsDialog.tempOptions["nofcrt"] = checked
-                }
-
-                QQC2.CheckBox {
-                    Kirigami.FormData.label: qsTr("Disable HDMI Wait:")
-                    checked: optionsDialog.tempOptions["nohdmiwait"] || false
-                    onCheckedChanged: optionsDialog.tempOptions["nohdmiwait"] = checked
-                }
-
-                QQC2.CheckBox {
-                    Kirigami.FormData.label: qsTr("Clean SMC:")
-                    checked: optionsDialog.tempOptions["cleanSmc"] || false
-                    onCheckedChanged: optionsDialog.tempOptions["cleanSmc"] = checked
-                }
-            }
+        onAccepted: {
+            root.advancedOptions = optionsDialog.tempOptions;
         }
 
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
+        Kirigami.FormLayout {
+            wideMode: true
 
-            QQC2.Button {
-                text: qsTr("Close")
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.RejectRole
-                onClicked: optionsDialog.reject()
+            QQC2.CheckBox {
+                Kirigami.FormData.label: qsTr("Disable FCrt:")
+                checked: optionsDialog.tempOptions["nofcrt"] || false
+                onToggled: optionsDialog.tempOptions["nofcrt"] = checked
             }
 
-            QQC2.Button {
-                text: qsTr("Save")
-                highlighted: true
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.AcceptRole
-                onClicked: {
-                    root.advancedOptions = optionsDialog.tempOptions;
-                    optionsDialog.accept();
-                }
+            QQC2.CheckBox {
+                Kirigami.FormData.label: qsTr("Disable HDMI Wait:")
+                checked: optionsDialog.tempOptions["nohdmiwait"] || false
+                onToggled: optionsDialog.tempOptions["nohdmiwait"] = checked
+            }
+
+            QQC2.CheckBox {
+                Kirigami.FormData.label: qsTr("Clean SMC:")
+                checked: optionsDialog.tempOptions["cleanSmc"] || false
+                onToggled: optionsDialog.tempOptions["cleanSmc"] = checked
             }
         }
     }
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Kirigami.Units.largeSpacing
-        spacing: Kirigami.Units.largeSpacing
-
-        Kirigami.FormLayout {
-            Layout.fillWidth: true
+    Kirigami.FormLayout {
 
             RowLayout {
                 Kirigami.FormData.label: qsTr("CPU Key:")
@@ -206,6 +120,7 @@ Item {
                     id: kvPathField
                     Layout.fillWidth: true
                     readOnly: true
+                    text: root.useGenericKeyvault ? qsTr("Generic Keyvault") : root.keyvaultUrl.toString()
                     placeholderText: qsTr("Select or generate Keyvault file...")
                 }
 
@@ -218,7 +133,10 @@ Item {
                 QQC2.Button {
                     text: qsTr("Generate")
                     icon.name: "document-new"
-                    onClicked: kvPathField.text = qsTr("Generic Keyvault")
+                    onClicked: {
+                        root.useGenericKeyvault = true;
+                        root.keyvaultUrl = "";
+                    }
                 }
             }
 
@@ -260,9 +178,10 @@ Item {
                 Kirigami.FormData.label: qsTr("Version:")
                 Layout.fillWidth: true
                 model: BuilderController.buildVersions
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedVersion(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedVersion(value);
                     }
                 }
             }
@@ -272,9 +191,10 @@ Item {
                 Kirigami.FormData.label: qsTr("Image Type:")
                 Layout.fillWidth: true
                 model: BuilderController.imageTypes
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedImageType(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedImageType(value);
                     }
                 }
             }
@@ -284,9 +204,10 @@ Item {
                 Kirigami.FormData.label: qsTr("Console:")
                 Layout.fillWidth: true
                 model: BuilderController.consoles
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedConsole(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedConsole(value);
                     }
                 }
             }
@@ -296,9 +217,10 @@ Item {
                 Kirigami.FormData.label: qsTr("SMC:")
                 Layout.fillWidth: true
                 model: BuilderController.smcFiles
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedSmc(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedSmc(value);
                     }
                 }
             }
@@ -332,38 +254,48 @@ Item {
                     Layout.fillWidth: true
                 }
             }
-        }
+    }
 
-        Item {
-            Layout.fillHeight: true
-        }
+    footer: QQC2.ToolBar {
+        contentItem: RowLayout {
+            Item {
+                Layout.fillWidth: true
+            }
 
-        QQC2.Button {
-            id: buildButton
-            text: qsTr("Build Image")
-            icon.name: "system-run"
-            highlighted: true
-            Layout.fillWidth: true
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 16
-            Layout.alignment: Qt.AlignHCenter
+            QQC2.Button {
+                id: buildButton
+                text: qsTr("Build Image")
+                icon.name: "system-run"
+                highlighted: true
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 16
 
-            onClicked: {
-                var config = {
-                    "mode": "donor",
-                    "donorMode": true,
-                    "cpuKey": root.cpuKey,
-                    "keyvaultPath": root.keyvaultPath,
-                    "cbLdv": root.cbLdv,
-                    "cfLdv": root.cfLdv,
-                    "pairingData": root.pairingData,
-                    "version": root.version,
-                    "imageType": root.imageType,
-                    "consoleModel": root.consoleModel,
-                    "smc": root.smcFile,
-                    "patches": root.activePatches,
-                    "options": root.advancedOptions
-                };
-                root.buildRequested(config);
+                onClicked: {
+                    var config = {
+                        "mode": "donor",
+                        "buildType": "donor",
+                        "xellOnly": false,
+                        "donorMode": true,
+                        "cpuKey": root.cpuKey,
+                        "keyvaultUrl": root.keyvaultUrl,
+                        "genericKeyvault": root.useGenericKeyvault,
+                        "cbLdv": root.cbLdv,
+                        "cfLdv": root.cfLdv,
+                        "pairingData": root.pairingData,
+                        "version": root.version,
+                        "imageType": root.imageType,
+                        "console": root.consoleModel,
+                        "smc": root.smcFile,
+                        "hack": "",
+                        "image": "",
+                        "patches": root.activePatches,
+                        "options": root.advancedOptions
+                    };
+                    root.buildRequested(config);
+                }
+            }
+
+            Item {
+                Layout.fillWidth: true
             }
         }
     }

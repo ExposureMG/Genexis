@@ -4,10 +4,10 @@ import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 import org.gxoss.genexis
 
-Item {
+Kirigami.ScrollablePage {
     id: root
 
-    property alias buildType: buildTypeCombo.currentText
+    property alias buildType: buildTypeCombo.currentValue
 
     property alias version: versionCombo.currentText
     property alias imageType: imageTypeCombo.currentText
@@ -27,86 +27,22 @@ Item {
 
     signal buildRequested(var config)
 
-    readonly property bool isXeLL: buildTypeCombo.currentText === qsTr("XeLL Image")
+    readonly property bool isXeLL: buildTypeCombo.currentValue === "xell"
+    readonly property bool isDonor: buildTypeCombo.currentValue === "donor"
 
-    QQC2.Dialog {
+    PatchesDialog {
         id: patchesDialog
-        title: qsTr("Configure Patches")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 18
-        implicitHeight: Kirigami.Units.gridUnit * 16
-
-        property var tempStates: ({})
-
-        onAboutToShow: {
-            var states = {};
-            var list = BuilderController.availablePatches;
-            for (var i = 0; i < list.length; i++) {
-                var patchName = list[i];
-                states[patchName] = root.activePatches.indexOf(patchName) !== -1;
-            }
-            tempStates = states;
-        }
-
-        contentItem: QQC2.ScrollView {
-            clip: true
-            ListView {
-                id: patchesListView
-                model: BuilderController.availablePatches
-                delegate: QQC2.CheckDelegate {
-                    required property string modelData
-
-                    width: patchesListView.width
-                    text: modelData
-                    checked: patchesDialog.tempStates[modelData] || false
-                    onCheckedChanged: {
-                        var updated = Object.assign({}, patchesDialog.tempStates);
-                        updated[modelData] = checked;
-                        patchesDialog.tempStates = updated;
-                    }
-                }
-            }
-        }
-
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
-
-            QQC2.Button {
-                text: qsTr("Close")
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.RejectRole
-                onClicked: patchesDialog.reject()
-            }
-
-            QQC2.Button {
-                text: qsTr("Save")
-                highlighted: true
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.AcceptRole
-                onClicked: {
-                    var selected = [];
-                    var list = BuilderController.availablePatches;
-                    for (var i = 0; i < list.length; i++) {
-                        var patchName = list[i];
-                        if (patchesDialog.tempStates[patchName]) {
-                            selected.push(patchName);
-                        }
-                    }
-                    root.activePatches = selected;
-                    patchesDialog.accept();
-                }
-            }
-        }
+        availablePatches: BuilderController.availablePatches
+        selectedPatches: root.activePatches
+        onPatchesAccepted: patches => root.activePatches = patches
     }
 
-    QQC2.Dialog {
+    Kirigami.Dialog {
         id: optionsDialog
         title: qsTr("Advanced Image Options")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 24
-        implicitHeight: Kirigami.Units.gridUnit * 18
+        preferredWidth: Kirigami.Units.gridUnit * 24
+        padding: Kirigami.Units.largeSpacing
+        standardButtons: Kirigami.Dialog.Save | Kirigami.Dialog.Cancel
 
         property string tempCpuKey: ""
         property string tempKvPath: ""
@@ -120,112 +56,70 @@ Item {
             tempCustomArgs = root.advancedOptions.customArgs || "";
         }
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            GridLayout {
-                columns: 2
-                rowSpacing: Kirigami.Units.mediumSpacing
-                columnSpacing: Kirigami.Units.largeSpacing
-                width: optionsDialog.width - optionsDialog.padding * 2
-
-                QQC2.Label {
-                    text: qsTr("CPU Key:")
-                    font.bold: true
-                    color: Kirigami.Theme.disabledTextColor
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-                QQC2.TextField {
-                    id: cpuKeyField
-                    text: optionsDialog.tempCpuKey
-                    placeholderText: qsTr("32-digit Hex CPU Key")
-                    font.family: "Monospace"
-                    Layout.fillWidth: true
-                    onTextChanged: optionsDialog.tempCpuKey = text
-                }
-
-                QQC2.Label {
-                    text: qsTr("Keyvault (KV):")
-                    font.bold: true
-                    color: Kirigami.Theme.disabledTextColor
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-                QQC2.TextField {
-                    id: kvPathField
-                    text: optionsDialog.tempKvPath
-                    placeholderText: qsTr("Path to kv.bin…")
-                    Layout.fillWidth: true
-                    onTextChanged: optionsDialog.tempKvPath = text
-                }
-
-                QQC2.Label {
-                    text: qsTr("SMC File:")
-                    font.bold: true
-                    color: Kirigami.Theme.disabledTextColor
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-                QQC2.TextField {
-                    id: smcPathField
-                    text: optionsDialog.tempSmcPath
-                    placeholderText: qsTr("Path to smc.bin…")
-                    Layout.fillWidth: true
-                    onTextChanged: optionsDialog.tempSmcPath = text
-                }
-
-                QQC2.Label {
-                    text: qsTr("Custom Flags:")
-                    font.bold: true
-                    color: Kirigami.Theme.disabledTextColor
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                }
-                QQC2.TextField {
-                    id: customArgsField
-                    text: optionsDialog.tempCustomArgs
-                    placeholderText: qsTr("Extra build flags…")
-                    Layout.fillWidth: true
-                    onTextChanged: optionsDialog.tempCustomArgs = text
-                }
-            }
+        onAccepted: {
+            root.advancedOptions = {
+                "cpuKey": optionsDialog.tempCpuKey,
+                "kvPath": optionsDialog.tempKvPath,
+                "smcPath": optionsDialog.tempSmcPath,
+                "customArgs": optionsDialog.tempCustomArgs
+            };
         }
 
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
+        Kirigami.FormLayout {
+            wideMode: true
 
-            QQC2.Button {
-                text: qsTr("Close")
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.RejectRole
-                onClicked: optionsDialog.reject()
+            QQC2.TextField {
+                id: cpuKeyField
+                Kirigami.FormData.label: qsTr("CPU Key:")
+                text: optionsDialog.tempCpuKey
+                placeholderText: qsTr("32-digit Hex CPU Key")
+                font.family: "Monospace"
+                Layout.fillWidth: true
+                onTextEdited: optionsDialog.tempCpuKey = text
             }
 
-            QQC2.Button {
-                text: qsTr("Save")
-                highlighted: true
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.AcceptRole
-                onClicked: {
-                    root.advancedOptions = {
-                        "cpuKey": optionsDialog.tempCpuKey,
-                        "kvPath": optionsDialog.tempKvPath,
-                        "smcPath": optionsDialog.tempSmcPath,
-                        "customArgs": optionsDialog.tempCustomArgs
-                    };
-                    optionsDialog.accept();
-                }
+            QQC2.TextField {
+                id: kvPathField
+                Kirigami.FormData.label: qsTr("Keyvault (KV):")
+                text: optionsDialog.tempKvPath
+                placeholderText: qsTr("Path to kv.bin…")
+                Layout.fillWidth: true
+                onTextEdited: optionsDialog.tempKvPath = text
+            }
+
+            QQC2.TextField {
+                id: smcPathField
+                Kirigami.FormData.label: qsTr("SMC File:")
+                text: optionsDialog.tempSmcPath
+                placeholderText: qsTr("Path to smc.bin…")
+                Layout.fillWidth: true
+                onTextEdited: optionsDialog.tempSmcPath = text
+            }
+
+            QQC2.TextField {
+                id: customArgsField
+                Kirigami.FormData.label: qsTr("Custom Flags:")
+                text: optionsDialog.tempCustomArgs
+                placeholderText: qsTr("Extra build flags…")
+                Layout.fillWidth: true
+                onTextEdited: optionsDialog.tempCustomArgs = text
             }
         }
     }
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Kirigami.Units.largeSpacing
-        spacing: Kirigami.Units.largeSpacing
-
-        Kirigami.FormLayout {
-            Layout.fillWidth: true
+    Kirigami.FormLayout {
 
             QQC2.ComboBox {
                 id: buildTypeCombo
                 Kirigami.FormData.label: qsTr("Build Type:")
                 Layout.fillWidth: true
-                model: [qsTr("NAND Image"), qsTr("XeLL Image"), qsTr("Donor")]
+                textRole: "text"
+                valueRole: "value"
+                model: [
+                    { text: qsTr("NAND Image"), value: "nand" },
+                    { text: qsTr("XeLL Image"), value: "xell" },
+                    { text: qsTr("Donor"), value: "donor" }
+                ]
             }
 
             QQC2.ComboBox {
@@ -234,9 +128,10 @@ Item {
                 Layout.fillWidth: true
                 visible: root.isXeLL
                 model: BuilderController.xellHacks
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedXellHack(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedXellHack(value);
                     }
                 }
             }
@@ -247,9 +142,10 @@ Item {
                 Layout.fillWidth: true
                 visible: root.isXeLL
                 model: BuilderController.xellImages
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedXellImage(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedXellImage(value);
                     }
                 }
             }
@@ -260,9 +156,10 @@ Item {
                 Layout.fillWidth: true
                 visible: !root.isXeLL
                 model: BuilderController.buildVersions
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedVersion(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedVersion(value);
                     }
                 }
             }
@@ -273,9 +170,10 @@ Item {
                 Layout.fillWidth: true
                 visible: !root.isXeLL
                 model: BuilderController.imageTypes
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedImageType(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedImageType(value);
                     }
                 }
             }
@@ -286,9 +184,10 @@ Item {
                 Layout.fillWidth: true
                 visible: !root.isXeLL
                 model: BuilderController.consoles
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedConsole(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedConsole(value);
                     }
                 }
             }
@@ -299,9 +198,10 @@ Item {
                 Layout.fillWidth: true
                 visible: !root.isXeLL
                 model: BuilderController.smcFiles
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedSmc(currentText);
+                onActivated: index => {
+                    var value = textAt(index);
+                    if (value !== "") {
+                        BuilderController.setSelectedSmc(value);
                     }
                 }
             }
@@ -335,39 +235,42 @@ Item {
                     Layout.fillWidth: true
                 }
             }
-        }
+    }
 
-        Item {
-            Layout.fillHeight: true
-        }
+    footer: QQC2.ToolBar {
+        contentItem: RowLayout {
+            Item {
+                Layout.fillWidth: true
+            }
 
-        QQC2.Button {
-            id: buildButton
-            text: qsTr("Build Image")
-            icon.name: "system-run"
-            highlighted: true
-            Layout.fillWidth: true
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 16
-            Layout.alignment: Qt.AlignHCenter
+            QQC2.Button {
+                id: buildButton
+                text: qsTr("Build Image")
+                icon.name: "system-run"
+                highlighted: true
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 16
 
-            onClicked: {
-                var config = {
-                    "buildType": root.buildType,
-                    "xellOnly": root.isXeLL,
-                    "donorMode": root.buildType === qsTr("Donor"),
-                    "patches": root.activePatches,
-                    "options": root.advancedOptions
-                };
-                if (root.isXeLL) {
-                    config["hack"] = root.xellHack;
-                    config["image"] = root.xellImage;
-                } else {
-                    config["version"] = root.version;
-                    config["imageType"] = root.imageType;
-                    config["console"] = root.consoleModel;
-                    config["smc"] = root.smcFile;
+                onClicked: {
+                    var config = {
+                        "mode": "advanced",
+                        "buildType": root.buildType,
+                        "xellOnly": root.isXeLL,
+                        "donorMode": root.isDonor,
+                        "version": root.isXeLL ? "" : root.version,
+                        "imageType": root.isXeLL ? "" : root.imageType,
+                        "console": root.isXeLL ? "" : root.consoleModel,
+                        "smc": root.isXeLL ? "" : root.smcFile,
+                        "hack": root.isXeLL ? root.xellHack : "",
+                        "image": root.isXeLL ? root.xellImage : "",
+                        "patches": root.isXeLL ? [] : root.activePatches,
+                        "options": root.advancedOptions
+                    };
+                    root.buildRequested(config);
                 }
-                root.buildRequested(config);
+            }
+
+            Item {
+                Layout.fillWidth: true
             }
         }
     }

@@ -9,9 +9,10 @@ QQC2.ToolBar {
     id: root
 
     property string pageTitle: qsTr("Genexis")
+    property url selectedFileUrl
 
     signal menuRequested
-    signal fileOpened(string filePath, string key)
+    signal fileOpened(url fileUrl, string key)
 
     function openOpenFileDialog() {
         openFileDialog.open();
@@ -36,15 +37,8 @@ QQC2.ToolBar {
                     id: filePathField
                     Layout.fillWidth: true
                     placeholderText: qsTr("File path…")
+                    text: root.selectedFileUrl.toString()
                     readOnly: true
-                    onTextChanged: {
-                        if (text !== "") {
-                            var autoKey = NandSession.detectCpuKey(text);
-                            if (autoKey !== "") {
-                                keyField.text = autoKey;
-                            }
-                        }
-                    }
                 }
 
                 QQC2.Button {
@@ -76,9 +70,9 @@ QQC2.ToolBar {
                 QQC2.Button {
                     text: qsTr("Confirm")
                     highlighted: true
-                    enabled: filePathField.text !== "" && !NandSession.isLoading
+                    enabled: root.selectedFileUrl.toString() !== "" && !NandSession.isLoading
                     onClicked: {
-                        root.fileOpened(filePathField.text, keyField.text);
+                        root.fileOpened(root.selectedFileUrl, keyField.text);
                         openFileDialog.close();
                     }
                 }
@@ -93,7 +87,7 @@ QQC2.ToolBar {
     FileDialog {
         id: filePicker
         onAccepted: {
-            filePathField.text = selectedFile;
+            root.selectedFileUrl = selectedFile;
             var autoKey = NandSession.detectCpuKey(selectedFile);
             if (autoKey !== "") {
                 keyField.text = autoKey;

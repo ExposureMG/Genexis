@@ -4,213 +4,164 @@ import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 import org.gxoss.genexis
 
-Item {
+Kirigami.ScrollablePage {
     id: root
 
-    property alias buildType: buildTypeCombo.currentText
+    property alias buildType: buildTypeCombo.currentValue
     property alias buildVersion: buildVersionCombo.currentText
     property alias imageType: imageTypeCombo.currentText
     property alias hackVersion: hackVersionCombo.currentText
     property var activePatches: []
 
+    readonly property bool isXeLL: buildTypeCombo.currentValue === "xell"
+
     signal buildRequested(var config)
 
-    QQC2.Dialog {
+    PatchesDialog {
         id: patchesDialog
-        title: qsTr("Configure Patches")
-        modal: true
-        parent: QQC2.Overlay.overlay
-        anchors.centerIn: parent
-        implicitWidth: Kirigami.Units.gridUnit * 18
-        implicitHeight: Kirigami.Units.gridUnit * 16
+        availablePatches: BuilderController.availablePatches
+        selectedPatches: root.activePatches
+        onPatchesAccepted: patches => root.activePatches = patches
+    }
 
-        property var tempStates: ({})
-
-        onAboutToShow: {
-            var states = {};
-            var list = BuilderController.availablePatches;
-            for (var i = 0; i < list.length; i++) {
-                var patchName = list[i];
-                states[patchName] = root.activePatches.indexOf(patchName) !== -1;
-            }
-            tempStates = states;
+    Kirigami.FormLayout {
+        QQC2.ComboBox {
+            id: buildTypeCombo
+            Kirigami.FormData.label: qsTr("Build Type:")
+            Layout.fillWidth: true
+            textRole: "text"
+            valueRole: "value"
+            model: [
+                { text: qsTr("NAND Image"), value: "nand" },
+                { text: qsTr("XeLL Image"), value: "xell" }
+            ]
         }
 
-        contentItem: QQC2.ScrollView {
-            clip: true
-            ListView {
-                id: patchesListView
-                model: BuilderController.availablePatches
-                delegate: QQC2.CheckDelegate {
-                    required property string modelData
-
-                    width: patchesListView.width
-                    text: modelData
-                    checked: patchesDialog.tempStates[modelData] || false
-                    onCheckedChanged: {
-                        var updated = Object.assign({}, patchesDialog.tempStates);
-                        updated[modelData] = checked;
-                        patchesDialog.tempStates = updated;
-                    }
+        QQC2.ComboBox {
+            id: buildVersionCombo
+            Kirigami.FormData.label: qsTr("Build Version:")
+            Layout.fillWidth: true
+            visible: !root.isXeLL
+            model: BuilderController.simpleVersions
+            onActivated: index => {
+                var value = textAt(index);
+                if (value !== "") {
+                    BuilderController.setSelectedSimpleVersion(value);
                 }
             }
         }
 
-        footer: QQC2.DialogButtonBox {
-            alignment: Qt.AlignRight
+        QQC2.ComboBox {
+            id: imageTypeCombo
+            Kirigami.FormData.label: qsTr("Image Type:")
+            Layout.fillWidth: true
+            visible: !root.isXeLL
+            model: BuilderController.simpleImageTypes
+            onActivated: index => {
+                var value = textAt(index);
+                if (value !== "") {
+                    BuilderController.setSelectedSimpleImageType(value);
+                }
+            }
+        }
+
+        QQC2.ComboBox {
+            id: hackVersionCombo
+            Kirigami.FormData.label: qsTr("Hack Version:")
+            Layout.fillWidth: true
+            visible: !root.isXeLL
+            model: BuilderController.simpleHacks
+            onActivated: index => {
+                var value = textAt(index);
+                if (value !== "") {
+                    BuilderController.setSelectedSimpleHack(value);
+                }
+            }
+        }
+
+        QQC2.ComboBox {
+            id: xellHackCombo
+            Kirigami.FormData.label: qsTr("Hack:")
+            Layout.fillWidth: true
+            visible: root.isXeLL
+            model: BuilderController.xellHacks
+            onActivated: index => {
+                var value = textAt(index);
+                if (value !== "") {
+                    BuilderController.setSelectedXellHack(value);
+                }
+            }
+        }
+
+        QQC2.ComboBox {
+            id: xellImageCombo
+            Kirigami.FormData.label: qsTr("Image:")
+            Layout.fillWidth: true
+            visible: root.isXeLL
+            model: BuilderController.xellImages
+            onActivated: index => {
+                var value = textAt(index);
+                if (value !== "") {
+                    BuilderController.setSelectedXellImage(value);
+                }
+            }
+        }
+
+        RowLayout {
+            Kirigami.FormData.label: qsTr("Patches:")
+            Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
+            visible: !root.isXeLL && buildVersionCombo.currentText !== "" && imageTypeCombo.currentText !== ""
 
             QQC2.Button {
-                text: qsTr("Close")
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.RejectRole
-                onClicked: patchesDialog.reject()
+                id: patchesButton
+                text: root.activePatches.length > 0 ? qsTr("Patches (%1 selected)").arg(root.activePatches.length) : qsTr("Patches")
+                icon.name: "preferences-system-patches"
+                onClicked: patchesDialog.open()
             }
 
-            QQC2.Button {
-                text: qsTr("Save")
-                highlighted: true
-                QQC2.DialogButtonBox.buttonRole: QQC2.DialogButtonBox.AcceptRole
-                onClicked: {
-                    var selected = [];
-                    var list = BuilderController.availablePatches;
-                    for (var i = 0; i < list.length; i++) {
-                        var patchName = list[i];
-                        if (patchesDialog.tempStates[patchName]) {
-                            selected.push(patchName);
-                        }
-                    }
-                    root.activePatches = selected;
-                    patchesDialog.accept();
-                }
+            QQC2.Label {
+                visible: root.activePatches.length > 0
+                text: root.activePatches.join(", ")
+                color: Kirigami.Theme.disabledTextColor
+                elide: Text.ElideRight
+                Layout.fillWidth: true
             }
         }
     }
 
-    ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Kirigami.Units.largeSpacing
-        spacing: Kirigami.Units.largeSpacing
-
-        Kirigami.FormLayout {
-            Layout.fillWidth: true
-
-            QQC2.ComboBox {
-                id: buildTypeCombo
-                Kirigami.FormData.label: qsTr("Build Type:")
+    footer: QQC2.ToolBar {
+        contentItem: RowLayout {
+            Item {
                 Layout.fillWidth: true
-                model: [qsTr("NAND Image"), qsTr("XeLL Image")]
             }
 
-            QQC2.ComboBox {
-                id: buildVersionCombo
-                Kirigami.FormData.label: qsTr("Build Version:")
-                Layout.fillWidth: true
-                visible: buildTypeCombo.currentText !== qsTr("XeLL Image")
-                model: BuilderController.simpleVersions
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedSimpleVersion(currentText);
-                    }
+            QQC2.Button {
+                id: buildButton
+                text: qsTr("Build Image")
+                icon.name: "system-run"
+                highlighted: true
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 16
+
+                onClicked: {
+                    var config = {
+                        "mode": "simple",
+                        "buildType": root.buildType,
+                        "xellOnly": root.isXeLL,
+                        "donorMode": false,
+                        "version": root.isXeLL ? "" : root.buildVersion,
+                        "imageType": root.isXeLL ? "" : root.imageType,
+                        "hack": root.isXeLL ? xellHackCombo.currentText : root.hackVersion,
+                        "image": root.isXeLL ? xellImageCombo.currentText : "",
+                        "patches": root.isXeLL ? [] : root.activePatches,
+                        "options": ({})
+                    };
+                    root.buildRequested(config);
                 }
             }
 
-            QQC2.ComboBox {
-                id: imageTypeCombo
-                Kirigami.FormData.label: qsTr("Image Type:")
+            Item {
                 Layout.fillWidth: true
-                visible: buildTypeCombo.currentText !== qsTr("XeLL Image")
-                model: BuilderController.simpleImageTypes
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedSimpleImageType(currentText);
-                    }
-                }
-            }
-
-            QQC2.ComboBox {
-                id: hackVersionCombo
-                Kirigami.FormData.label: qsTr("Hack Version:")
-                Layout.fillWidth: true
-                visible: buildTypeCombo.currentText !== qsTr("XeLL Image")
-                model: BuilderController.simpleHacks
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedSimpleHack(currentText);
-                    }
-                }
-            }
-
-            QQC2.ComboBox {
-                id: xellHackCombo
-                Kirigami.FormData.label: qsTr("Hack:")
-                Layout.fillWidth: true
-                visible: buildTypeCombo.currentText === qsTr("XeLL Image")
-                model: BuilderController.xellHacks
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedXellHack(currentText);
-                    }
-                }
-            }
-
-            QQC2.ComboBox {
-                id: xellImageCombo
-                Kirigami.FormData.label: qsTr("Image:")
-                Layout.fillWidth: true
-                visible: buildTypeCombo.currentText === qsTr("XeLL Image")
-                model: BuilderController.xellImages
-                onCurrentTextChanged: {
-                    if (currentText !== "") {
-                        BuilderController.setSelectedXellImage(currentText);
-                    }
-                }
-            }
-
-            RowLayout {
-                Kirigami.FormData.label: qsTr("Patches:")
-                Layout.fillWidth: true
-                spacing: Kirigami.Units.smallSpacing
-                visible: buildTypeCombo.currentText !== qsTr("XeLL Image") && buildVersionCombo.currentText !== "" && imageTypeCombo.currentText !== ""
-
-                QQC2.Button {
-                    id: patchesButton
-                    text: root.activePatches.length > 0 ? qsTr("Patches (%1 selected)").arg(root.activePatches.length) : qsTr("Patches")
-                    icon.name: "preferences-system-patches"
-                    onClicked: patchesDialog.open()
-                }
-
-                QQC2.Label {
-                    visible: root.activePatches.length > 0
-                    text: root.activePatches.join(", ")
-                    color: Kirigami.Theme.disabledTextColor
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-            }
-        }
-
-        Item {
-            Layout.fillHeight: true
-        }
-
-        QQC2.Button {
-            id: buildButton
-            text: qsTr("Build Image")
-            icon.name: "system-run"
-            highlighted: true
-            Layout.fillWidth: true
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 16
-            Layout.alignment: Qt.AlignHCenter
-
-            onClicked: {
-                var config = {
-                    "buildType": root.buildType,
-                    "xellOnly": root.buildType === qsTr("XeLL Image"),
-                    "buildVersion": root.buildType === qsTr("XeLL Image") ? "" : root.buildVersion,
-                    "imageType": root.buildType === qsTr("XeLL Image") ? "" : root.imageType,
-                    "hackVersion": root.buildType === qsTr("XeLL Image") ? "" : root.hackVersion,
-                    "patches": root.activePatches
-                };
-                root.buildRequested(config);
             }
         }
     }
