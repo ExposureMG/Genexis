@@ -84,15 +84,17 @@ set(GENEXIS_CORE_SOURCES
     src/utils/Files.cpp
     src/utils/files/XebuildIni.cpp
     src/adapters/Gxbuild3.cpp
-    src/pages/Builder.cpp
-    src/pages/Info.cpp
+    src/pages/BadUpdate.cpp
+    src/pages/Flasher.cpp
+    src/pages/Nand.cpp
     include/utils/Settings.hpp
     include/utils/Network.hpp
     include/utils/Files.hpp
     include/utils/files/XebuildIni.hpp
     include/adapters/Gxbuild3.hpp
-    include/pages/Builder.hpp
-    include/pages/Info.hpp
+    include/pages/BadUpdate.hpp
+    include/pages/Flasher.hpp
+    include/pages/Nand.hpp
 )
 
 qt_policy(SET QTP0001 NEW)
@@ -139,6 +141,9 @@ qt_add_qml_module(genexis_core
 
 target_include_directories(genexis_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/pages
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/utils
 )
 
 target_link_libraries(genexis_core
@@ -150,7 +155,7 @@ target_link_libraries(genexis_core
         Qt6::Quick
         Qt6::QuickControls2
     PRIVATE
-        gxbuild3_lib
+        gxbuild3_cli
         KF6::CoreAddons
         KF6::I18n
         KF6::Kirigami
@@ -168,6 +173,27 @@ target_link_libraries(genexis PRIVATE
 
 if(ANDROID)
     target_link_libraries(genexis PRIVATE log)
+endif()
+
+option(GENEXIS_BUILD_TESTS "Build Genexis unit tests" OFF)
+if(GENEXIS_BUILD_TESTS)
+    include(CTest)
+    find_package(Qt6 6.7 REQUIRED COMPONENTS Test)
+
+    qt_add_executable(genexis_phase1_tests tests/Phase1Tests.cpp)
+    target_link_libraries(genexis_phase1_tests PRIVATE
+        genexis_core
+        genexis_coreplugin
+        Qt6::Test
+        Qt6::Widgets
+        KF6::IconThemes
+        KF6::Kirigami
+    )
+    target_compile_definitions(genexis_phase1_tests PRIVATE
+        GENEXIS_TEST_SUPPORT_FILES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/extern/gxbuild3/tests/gxBuild-support-files"
+    )
+    add_test(NAME phase1 COMMAND genexis_phase1_tests)
+    set_tests_properties(phase1 PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
 
 include(GNUInstallDirs)
